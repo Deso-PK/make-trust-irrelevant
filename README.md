@@ -1,4 +1,5 @@
 DesoPK, “Make Trust Irrelevant: A Gamer’s Take on Agentic AI Safety,” GitHub repository, 2026.
+Edited with LLM
 
 # Make Trust Irrelevant: A Gamer’s Take on Agentic AI Safety
 
