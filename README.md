@@ -14,6 +14,8 @@ The missing layer in today’s Agentic stacks isn’t better alignment or strong
 
 This is not a moral argument. It’s an engineering argument.
 
+Scope: This is a constraints first paper. The underlying design exists, but implementation details are intentionally omitted here.
+
 ---
 
 ## 1. The Failure Mode We Keep Repeating
