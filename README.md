@@ -1,3 +1,7 @@
+> **U.S. Patent Pending**  
+> KERNHELM is a plan-bound authorization architecture for governing privileged effects in untrusted computational agents.  
+> For acquisition or confidential technical diligence: **kernhelm@tuta.com**
+
 DesoPK, “Make Trust Irrelevant: A Gamer’s Take on Agentic AI Safety,” GitHub repository, 2026.
 Edited with LLM
 
