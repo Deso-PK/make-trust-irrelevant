@@ -1,4 +1,4 @@
-> **U.S. Patent Pending**  
+> **U.S. Patent Pending February 2026**  
 > KERNHELM is a plan-bound authorization architecture for governing privileged effects in untrusted computational agents.  
 > For acquisition or confidential technical diligence: **kernhelm@tuta.com**
 
@@ -19,6 +19,22 @@ The missing layer in today’s Agentic stacks isn’t better alignment or strong
 This is not a moral argument. It’s an engineering argument.
 
 Scope: This is a constraints first paper. The underlying design exists, but implementation details are intentionally omitted here.
+
+---
+
+## Licensing & Partnership
+
+KERNHELM introduces a kernel-level authority mediation model for agent systems.
+
+This work was publicly released in February 2026 and is currently under patent filing.
+
+We are open to:
+- Acquisition
+- Exclusive licensing
+- Strategic integration partnerships
+
+Contact:
+kernhelm@tuta.com
 
 ---
 
