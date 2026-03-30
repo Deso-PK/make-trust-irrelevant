@@ -1,4 +1,4 @@
-> **U.S. Patent Pending February 2026**  
+> **U.S. Patent Pending - February 2026**  
 > KERNHELM is a plan-bound authorization architecture for governing privileged effects in untrusted computational agents.  
 > For acquisition or confidential technical diligence: **kernhelm@tuta.com**
 
