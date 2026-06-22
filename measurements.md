@@ -49,7 +49,7 @@ Do not turn this into a production service-level guarantee.
 |---|---:|---:|---:|---:|
 | Heartbeat interval | 25 | 250.003 ms | 252.009 ms | 252.299 ms |
 
-This shows the proof cadence stayed near the configured 250 ms period with small scheduler jitter in the measured run.
+This shows the proof cadence stayed near the configured 250 ms period with small scheduler jitter in the measured run. This is in the pre-boot configuration menu's not the live enviroment. 
 
 ## What the numbers mean
 
