@@ -137,8 +137,6 @@ I teased the filing date up top, so here's the rest of it.
 
 The provisional, filed February 2026, covers the architecture itself, the permit model, the stance system, the receipt chain, and the boot-corridor governance underneath all of it. All of that is on record now, with a priority date.
 
-I didn't build a wall that cares what's actually knocking on it. Doesn't matter if it's a model that got fooled, a dependency that got quietly backdoored, or something that's already past your front door and looking for a way to climb further in. Come through authority admitted from the one path that's allowed to ever issue it, or nothing happens. That's the whole rule, and it doesn't bend because someone asked politely, and it doesn't bend because someone asked with a badge either.
-
-I'll be straight about why this exists at all. I think privacy is mostly gone, and I think the rules being written around it right now make it worse, not better. Tim Cook said "If you put a key under the mat for the cops, a burglar can find it, too". There's no such thing as an opening that only the good guys can walk through. So I stopped waiting for anyone to protect any of this on my behalf and built something that doesn't require trusting them to. That's all KERNHELM really is. A way to take some of it back, mechanically, for the person who actually owns the machine, because nobody else was going to. It also makes agents useful instead of being a liabilty. 
+I didn't build a wall that cares what's actually knocking on it. Doesn't matter if it's a model that got fooled, a dependency that got quietly backdoored, or something that's already past your front door and looking for a way to climb further in. Come through authority admitted from the one path that's allowed to ever issue it.
 
 - DesoPK
