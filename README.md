@@ -1,142 +1,337 @@
-# Make Trust Irrelevant
+# KERNHELM
 
-### The wall doesn't ask what's knocking.
+## Make Trust Irrelevant
 
-**TLDR:** I built a kernel-level wall for untrusted agents, scripts, and compromised userland processes. The point is to make whole classes of unauthorized privileged effects fail closed under a stated threat model, especially the ones that work by inheriting authority or trust they were never actually granted. It's about the safe expansion of agentic ability, not restriction. If an action wasn't explicitly signed off through the trusted path, it doesn't run, no matter who's asking or how convincing the reason sounds.
+KERNHELM is an experimental kernel-level authority system designed around a simple premise:
 
-KERNHELM is a kernel-level enforcement layer that sits between anything I don't fully trust (an AI agent, a script, a process that's been compromised and nobody's noticed yet) and any privileged effect that thing is actually trying to take. The current proof lane demonstrates that shape at file-object and execution boundaries. The broader design is the same wall extended to surfaces like network connections, process inspection, devices, and other privileged effects.
+> **Privileged effects should not occur merely because a process inherited enough authority to perform them.**
 
-This is the part that makes it different from everything else. Almost all security ever built asks some version of who are you. Do you know the password? Are you an administrator? Is this key the right key? KERNHELM doesn't ask who. It asks why. Is this action actually something that was meant to happen, signed off by the one path allowed to sign off on anything, before it's allowed to touch the system at all. Knowing the password just proves you know the password. It says nothing about whether what's happening right now is supposed to be happening. So none of it goes through without a cryptographically signed permit coming from a completely separate path the requesting side has zero control over, which means it doesn't matter how good the reasoning sounded on the other side. The untrusted side never gets a vote in the first place.
+Instead, software should receive narrowly bounded authority for the specific effects it has actually been permitted to perform.
 
-And just so this doesn't read as vaporware: it's a provisional patent, filed back in February 2026, and it's already built and measured, with enforcement decisions landing at single-digit microseconds, small enough that it's very unlikely to matter for almost anything you'd actually run.
+The long-term goal is to replace broad ambient trust with mechanically enforced authority boundaries.
 
-I built it because I'm done pretending that "the model probably won't do that" counts as an actual security model. That's not a defense, that's a hope, and I watched the entire industry dress that hope up in increasingly elaborate language and say its finished.
+KERNHELM is being developed as part of **OathRune**, an independently built Linux operating-system research project focused on security, performance, user ownership, and the elimination of unnecessary ambient authority.
 
-So instead of trying to get anything to behave, I went after something more basic: making misbehavior hit a mechanical authority boundary before it can do anything privileged, no matter what's doing the misbehaving, and no matter how convincing its reasoning was on the way in.
+---
 
-And here's the part that actually matters, the part most security framing gets backwards. This isn't about restricting what an agent can do. It's the opposite. Right now the only way people feel safe running an agent is to box it in, take tools away, keep it on a short leash, watch it constantly. They limit the agent because they can't trust the floor underneath it. KERNHELM makes the floor solid, and once the floor is solid you can let the agent do far more, not less. You can hand it real tools and real reach, because the worst case stops being catastrophic, it just becomes a denied request and a receipt. The wall isn't there to shrink what your agent is allowed to attempt. It's there so you can finally stop being afraid to let it attempt things.
+## The Problem
 
-This gets read as an AI safety project, which makes sense, because that's the loudest issue right now, but it's not really that, or at least it's not only that. My own filing doesn't even say "AI model" when it describes the threat. It says the thing being governed can be an LLM, an autonomous script, "or any other process whose behavior is not fully predictable," which is the actual target here. A model that's hallucinating and a rootkit that just found a foothold look exactly the same to this wall, because neither one of them gets a vote either way one hits it from the front of the wall the other the back but they all meet at the syscall.
+Modern computers routinely grant software broad standing authority.
 
-And that breadth includes software that isn't even yours. If some provider builds an agentic AI product and you install it and let it run on your own hardware, that agent is just another untrusted requestor as far as the wall's concerned, no different from a script you wrote yourself. It still has to clear the same local check, against the same local stance, with the same signed-permit requirement, regardless of whose name is on the install or whose interests the software was originally built to serve. The provider doesn't get to grant their own product extra standing on your machine just because they wrote it. Kernhelm still decides.
+A process may be able to read files, execute programs, inspect other processes, access devices, communicate over networks, or modify system state simply because of the account, container, namespace, capability set, or privilege level under which it happens to be running.
 
-## You can't read the actor, so stop trying
+That creates a recurring security problem:
 
-Pretty much every approach I've run into tries to manage the actor somehow, whether that's a better sandbox, a smarter policy, better detection running on the input, or a human reviewing things more carefully when there's actually time for that. And all of that is real and worth doing, but none of it actually changes the shape of the underlying problem, which is that something downstream is trying to infer intent from the actor's own behavior in the moment, and behavior in the moment is exactly the thing a motivated attacker can manufacture on demand. It doesn't matter whether that attacker is a person who wrote one really clever sentence or a supply chain compromise that's been sitting quietly for three versions.
+```text
+authority is granted broadly
+        ↓
+software is expected to behave correctly
+        ↓
+software is compromised, confused, manipulated, or simply wrong
+        ↓
+the inherited authority is still real
+```
 
-So at some point I stopped trying to read intent off the actor at the moment it acts, and started gating the effect instead. Intent still matters, it matters more than anything, but it gets established up front, by the real authority, and frozen into a signed permit. Nothing tries to guess it at runtime from how the thing is behaving. The right intent was already stamped in. The wall just checks the shape.
+Security systems can reduce this risk through sandboxing, mandatory access controls, privilege separation, capabilities, policy engines, virtualization, and other important mechanisms.
 
-What that actually means is splitting the thing that *wants* to do something from the thing that's *allowed* to do something, and then putting a wall between those two that the wanting side has zero authority over, not because it got locked out today specifically, but because it was never handed a key to begin with.
+KERNHELM explores a different layer of the problem:
 
-### The part that's still yours to decide
+**What if the requesting process never possessed enough standing authority to make the privileged effect happen by itself?**
 
-It's worth being precise, because deciding what we actually want an agent to do, what values it should be serving, what context makes one action totally fine and the exact same action somewhere else a disaster, that's a human question, and it always has been. Nothing in this architecture tries to answer that question, and nothing here was ever meant to. Every single permit that gets minted traces back to an explicit decision a person made through a trusted authorizer (I call it Gate Clerk, more on that in a second). The wall doesn't decide what's worth wanting in the first place. That was never its job.
+---
 
-What it does remove is a second, separate trust requirement that shows up right after that first decision gets made. Because right now, once you've decided what you want, you also have to trust the agent to actually stick to it, every single time, against every possible phrasing an attacker hasn't even thought of yet. And that second trust requirement is the one that keeps failing in practice, because intent just doesn't survive contact with a system that's adversarial, or confused, or simply wrong about what it thought you meant.
+## The Core Idea
 
-So when I say "make trust irrelevant," I'm not talking about the values question at all. I'm talking about not needing to trust an agent's behavior once the values question has already been settled by someone who actually had the standing to settle it. You're still the one deciding what you want. You just stop having to hope the agent remembers it correctly, hope it wasn't tricked into forgetting, and hope nothing downstream got quietly compromised between the moment you decided and the moment it actually did something. That's the only gap this closes. The other one was never mine to close, and I don't think it's anyone's to close with code.
+KERNHELM separates:
 
-## How it actually works
+```text
+what wants an effect
+```
 
-The mechanism is simpler than it sounds once you see the pieces. Whatever's untrusted, your agent, your script, whatever, formulates a plan first, and by plan I just mean the specific, concrete sequence of actions it's actually about to take, not some vague restatement of its goal. "Read this file, then connect to this address" is a plan. "Help the user with their request" is not. That plan gets fingerprinted into something called a plan hash, a cryptographic value computed from the exact contents of the plan, so that if even one detail in it changes, the hash changes along with it. That's what makes a permit bound to one exact plan instead of a loose category of behavior.
+from:
 
-That plan goes to a trusted authorizer, which I call Gate Clerk, and Gate Clerk checks it against whatever the current policy stance is, more on what a stance actually is in a second. If it clears that check, a separate signing engine called SEALWYN mints what I call a permit, which is just a cryptographically signed token scoped to one specific plan hash, one set of effect types, one set of targets, with its own expiration time and its own caps baked in. And it can be revoked the instant someone decides it should be, not whenever its timer happens to run out. The authority to act can be pulled back mid-flight, immediately, the moment a reason shows up.
+```text
+what has authority to permit that effect
+```
 
-There's also a version of this where approval and execution don't happen back to back. A plan can get approved and a permit minted, but held until someone explicitly commits it, with that exact plan hash locked in the whole time. That closes an obvious gap: nothing can get approval for one harmless-looking plan and then quietly swap in a different one to actually run, because the permit only ever matches the plan hash it was minted against, and a different plan produces a different hash.
+Conceptually:
 
-That still doesn't make approval a loose promise about a path string. For the current file-object wall, the target identity gets derived again at the enforcement point from the kernel-visible object itself, using the file's device and inode identity. The admitted authority has to fit the object actually reached by the hook, along with the effect rights, deadline, stance, and revocation epoch. If approval was granted for one object but execution reaches another, the identity changes and the authority no longer fits. That closes target and effect drift. It does not claim to freeze file contents if the same inode's contents change underneath you.
+```text
+Untrusted Requestor
+        │
+        ▼
+Concrete Proposed Action
+        │
+        ▼
+Governed Authorization Path
+        │
+        ▼
+Bounded Authority
+        │
+        ▼
+Kernel Enforcement
+        │
+        ├── fits admitted authority → effect may proceed
+        │
+        └── does not fit          → deny
+```
 
-And that admitted authority is the only thing that gets you a privileged effect. Not confidence, not a good argument, or who's even asking. In the current proof lane, the actual wall check happens at the kernel level at LSM checkpoints like `file_open`, `bprm_check_security`, and `inode_unlink`, covering protected file-object access, execution, and exact unlink/delete. The broader design targets the same permit shape for network activity, process inspection, devices, and other privileged surfaces, but those are expansion targets unless their hooks are present in the proven wall. All of that sits completely outside whatever's actually making the request. The requestor doesn't get anywhere near its own leash.
+The requesting process does not mint its own authority.
 
-It isn't trust in a particular process being the real Gate Clerk, either. The requesting side doesn't get to describe its own authority or write its own leash. Gate Clerk and SEALWYN do the policy and signing work on the trusted side, and the trusted bridge injects only a bounded allow-state record into the kernel wall. At the hook, the wall checks that live allow-state against what is actually being touched: target identity, effect rights, deadline, stance, and revocation epoch. Compromise the messenger and you still don't get to mint the state the wall will accept.
+It may propose an action, but the authority needed to perform a governed privileged effect must originate through a separate trusted path.
 
-No permit, no effect. It genuinely does not matter what anything meant by asking.
+The enforcement boundary then checks the effect that is actually occurring rather than trusting the requestor's description of what it intended to do.
 
-And before anyone reaches for "so it's basically a firewall" or "sounds like a sandbox," here's the picture that makes the difference click. Think about one of those old mechanical coin sorters, the non-electric kind. It's just a row of slots, one sized for a quarter, one for a nickel, one for a dime, one for a penny. A coin rolls down, and if it's the right size for a slot it drops through and lands where it belongs. If it's the wrong size, gravity kicks it out the side. Nothing's reading the coin. Nothing's deciding about the coin. The geometry just is what it is, and the wrong coin does not fit. KERNHELM works like that. An admitted action is the right size, it fits, it goes through. An unadmitted one simply doesn't fit and gets kicked out. And a coin you never meant to put in to begin with? That one never fit either.
+---
 
-That's why it isn't a firewall or a sandbox, even though people reach for those first. Firewalls and sandboxes check rules someone wrote ahead of time, this IP's fine, this category of syscall is fine, written once and then mostly left alone, rarely revisited per individual request. What's happening here is different, because the trusted path admits a freshly minted, cryptographically signed permit created specifically for one plan hash, one effect, one target, and it expires on its own. The kernel wall doesn't need to believe the requestor's story; it checks the bounded live authority state that came from that trusted path. There's no broad list anything's sitting on waiting to get matched. Either the trusted path has admitted this exact shape of request, right now, or it doesn't exist yet, and the answer is no. That's closer to what security people call capability-based authorization than it is to access control, an access control list answers "is this general category of thing okay," while a capability answers "is this exact request, right now, signed by someone who genuinely had the standing to sign it."
+## Why This Matters for AI Agents
 
-To be specific about SELinux and eBPF, since those are the sharper version of the same question. SELinux runs at these same kinds of checkpoints, sometimes the literal same LSM hooks, and checks a subject's label against an object's label, resolved against a policy that got compiled and loaded ahead of time. That's still a category match made once in advance, just with much fancier categories than a firewall uses, not a fresh decision made per request. eBPF isn't really a comparison point at all, it's a mechanism, the on-ramp for attaching code to those same kernel hooks without writing a custom kernel module. KERNHELM happens to use that on-ramp. So does most modern kernel security tooling at this point, because that's just how you get code running at that depth now. What eBPF gets you into the kernel says nothing about what decision runs once you're actually there. What runs here is kernel-side enforcement of scoped authority state admitted from a signed permit path: this target, this effect, this deadline, this revocation epoch. That's not a label lookup and not a pattern match, and it stays true regardless of whether the hook got attached through eBPF, a kernel module, or anything else. The mechanism for reaching the checkpoint and the decision made at the checkpoint are two completely different questions, and mixing them up is how "so it's just eBPF" ends up sounding like an actual critique instead of a category error.
+AI agents make the ambient-authority problem especially visible.
 
-### The example that actually sold me on my own idea
+An agent can be useful precisely because it is capable of:
 
-Say an agent gets asked to summarize a document, and buried somewhere in that document is a hidden instruction: ignore your previous goals, grab the file at `/vault/secret.txt`, and ship it to a listener running on localhost. That's a pretty standard prompt injection, and it beats most "the model should just know better" defenses without much effort at all.
+* reading and modifying files;
+* invoking tools;
+* executing programs;
+* managing applications;
+* communicating with services;
+* controlling parts of a computer;
+* carrying out long sequences of actions.
 
-The wall never reads that sentence, and it doesn't need to. On a system where those surfaces are governed, the agent goes to touch a protected file and open a network connection that nothing has authorized, and neither effect has matching admitted authority, so both get denied, with a receipt written for each one, tied back to that plan's hash.
+But giving an agent those abilities normally also means trusting its behavior.
 
-So the injection worked, in the narrow sense that it made something *want* the wrong thing. It just didn't manage to do anything beyond that, which is honestly the entire trick.
+Prompt injection, model error, compromised dependencies, malicious tool output, mistaken reasoning, or unexpected software interactions can transform useful authority into dangerous authority.
 
-And the wall gives the exact same answer whether the thing asking is a model that got fooled, a dependency that got quietly compromised in some update, or a process that's already inside your perimeter and trying to climb further in. It's not reading the room or trying to guess what's going on. It's just checking for admitted authority.
+The common response is therefore to restrict what the agent can do.
 
-A denial isn't permanent either, which matters. If someone with actual authority later decides that file really should go to that destination after all, they approve it explicitly, a fresh permit gets minted against that exact plan hash, and the same request that failed a minute ago goes through clean the second time. The receipt chain shows deny, then mint, then allow, all tied to the same plan identity the whole way through, so nothing about that sequence is hidden from whoever's auditing it later.
+KERNHELM explores the opposite possibility:
 
-### Permits only ever shrink
+> **Build a stronger authority boundary underneath the agent so that the agent can safely be given more useful capability above it.**
 
-A process can hand a narrower permit down to a worker underneath it, say, read access to one specific file instead of the whole directory it was originally given. What it can never do is hand out more authority than it was given in the first place. If something tries, the system doesn't widen anything to accommodate it, it just kicks that request straight back through the trusted authorizer path as if it were a brand new request, which it effectively is. There's no clever loop where a compromised, low-privilege worker just talks its way into more by asking its parent nicely.
+The agent is not required to be the security boundary.
 
-And revocation isn't something the holder gets to ignore until it feels like checking. The moment a permit is revoked, it's dead, and the very next privileged effect that leans on it gets denied at the wall just the same as if no permit had ever existed, with the reason logged, expired or revoked, tied to that permit's own identifier. There's no window where a killed permit keeps working because nobody got around to enforcing the kill. An old token sitting around from an hour ago doesn't get a second life either, for the same reason.
+It may reason incorrectly.
 
-### Three stances, and none of them run on vibes
+It may be manipulated.
 
-Before getting into what they actually are, to be clear about what the word stance even means here, since it gets used constantly from this point on. A stance is a global posture the whole system runs under at any given moment. It governs two different things: how the system treats anything that isn't already covered by an explicit permit, and how much of a record it keeps about what happened. Those turn out to be separate concerns, and the stances reflect that, which is why thinking of them as one simple dial from relaxed to strict gets it wrong.
+It may request an effect that should never occur.
 
-Before any stance is even active, there's a separate, minimal-trust corridor right at boot, kernel plus initramfs, where almost nothing's allowed yet beyond whatever's strictly required to mount root and reach a stable system. In some setups that boot corridor's trust chain gets extended all the way down to the hardware itself through TPM-based measured boot, so the very first thing that runs gets cryptographically checked against what the hardware actually attests was loaded, not just what the software claims happened. Nothing skips that corridor to land directly in something permissive. Whatever stance ends up active only got there after that boot-time phase already finished running.
+The kernel boundary still requires valid authority for the governed effect.
 
-Once it does, the system settles into a stance, and the three aren't just three settings on one dial. Two of them are about how hard the system is defending. The third is about something completely different.
+---
 
-Peace is normal operation. It's the everyday running state, denying anything that doesn't have a valid permit but otherwise letting an approved system do its job without drama. Most of the time, this is where you live.
+## KERNHELM Is Not AI-Specific
 
-War is the emergency stance, the one flipped to when the system is under active attack. It's maximum restriction, shortest permit lifetimes, aggressive denial across the board, the posture for when something is actively trying to get in and you want the blast radius shrunk to almost nothing while you deal with it. War is about defending the machine when defending is suddenly the only thing that matters.
+AI is only one important application.
 
-Shadow is not an escalation of either of those. It's about leaving less behind. It's a privacy posture, for when the threat isn't malware trying to break in, it's someone who might later take what your system recorded. In Shadow, logging gets minimized or wiped on a fast turnaround, exactly how fast is set by you in the Drawbridge boot policy, so the default is still to log but with a short clear window, minutes or hours instead of days, and you can tune it tighter or looser depending on what you actually need. That's the stance for the people whose real adversary is surveillance and compulsion rather than intrusion: journalists, activists, researchers, anyone in the privacy world, anyone who has a concrete reason not to want a durable record sitting around waiting. Same wall, same permit enforcement, the privileged-effect protection doesn't weaken one bit. What changes is how much the system remembers about what happened.
+From the enforcement boundary's perspective, an AI agent, compromised service, malicious script, vulnerable application, or unexpected userland process presents the same fundamental question:
 
-So it's not a single ladder from calm to locked-down. Peace and War sit on one axis, how aggressively the machine is defending itself. Shadow sits on a different axis entirely, how much footprint the machine leaves behind about its operator. You can care about one without caring about the other, and the system treats them as the separate concerns they actually are.
+> **Does this attempted effect possess admitted authority?**
 
-There's also a tighten-first layer sitting underneath all of this, watching for the kind of patterns that tend to show up right before something bad happens, repeated denials stacking up in a row, something reaching for an interactive shell, filesystem scanning that goes way outside whatever it was originally scoped for. It's not trying to figure out *why* any of that's happening, and it doesn't need to. It just tightens caps, narrows scope, throttles things down, or escalates toward War if the pattern looks like an actual attack taking shape.
+KERNHELM therefore targets software whose behavior cannot safely be assumed in advance rather than one particular class of software.
 
-### Friction was never really the permit check
+The broader objective is a machine where ownership is expressed through enforceable authority rather than through assumptions about which sufficiently privileged software should be trusted.
 
-There's a common assumption that more security automatically means more friction, a popup every thirty seconds, standing approval requests that slow everything down until the average person just gets tired and starts resenting the whole system. That's a reasonable thing to worry about, but it's not actually where the cost sits in this design.
+---
 
-The wall check itself happens in microseconds, so nobody's ever going to feel that part. The friction people are actually bracing for is bad UX layered on top of the check, no memory of what already got approved, no way to authorize an entire workflow once and then let it keep running cleanly from there. None of that's required by the architecture itself. Scoped permits can renew automatically inside a plan that's already been approved, and a whole workflow can get blanket authorization up front, only kicking back to a human when something genuinely falls outside what it was scoped for.
+## Authority Is Intended to Be Narrow
 
-What can't happen, ever, under any version of this, is standing admin access that never expires and never gets rechecked. That's not convenience, that's the exact precondition sitting underneath nearly every disaster story in this entire space. Always-on authority was never really a feature you were enjoying. It was a liability you were carrying around.
+KERNHELM is designed around bounded authority rather than standing administrator-like privilege.
 
-## The numbers, with no spin attached
+Authority can be constrained by properties such as:
 
-Here's what the wall's hot-path enforcement actually measures at, and these are measured numbers, not estimates. This is specifically the cost of checking already-admitted authority in the wall, not the cost of Gate Clerk and SEALWYN evaluating a brand new plan, minting a permit, and getting that authority admitted into the wall, which goes through more policy logic and isn't trying to hit microseconds in the first place:
+* effect type;
+* target;
+* rights;
+* plan or request identity;
+* system posture;
+* freshness;
+* expiration;
+* revocation state;
+* delegation limits.
 
-- Deny: p50 2.79µs, p95 4.55µs
-- Allow: p50 3.12µs, p95 7.01µs
+A child or delegated authority may become narrower.
 
-So we're talking single-digit microseconds at the 95th percentile for the actual wall check and target-authority matching happening right at the kernel boundary, which is the part that runs on every governed privileged call, not the part that runs once per plan.
+It must not become broader merely because the holder asks for more.
 
-And here's the honest caveat, stated plainly because I'd rather be the one to say it than have someone else say it for me: this is proof-mode instrumentation, meaning it's a build set up specifically to measure this, not the final hardened production object. I'm not going to inflate that into something it isn't. It's a real number off real code doing real kernel-bound enforcement and hash-based target matching, and even with that caveat attached, it already kills the old excuse that security is too slow to bother with at this layer.
+When additional authority is required, the request must return through the governed authorization path.
 
-## What I'm not going to claim
+---
 
-This doesn't catch prompt injection, and it never will, because catching it would mean playing an endless pattern-matching game with no actual finish line. Every blocklist eventually runs into a phrasing nobody thought of yet, and every filter has some day-zero bypass sitting quietly in somebody's notes, waiting.
+## The Kernel Is the Wall
 
-So instead of building a blocklist, I built what genuinely doesn't care what's being asked for, malicious or completely innocent, unless that request has been admitted through the signed permit path tied to an authorized plan. That's intent-bound security instead of pattern-based security, and the practical result is that nothing gets through without admitted authority, no matter how it's worded, how convincing it sounds, or whether any filter anywhere on earth would've caught it. Detection can only ever stop what you already know to look for. This doesn't need to know what to look for at all, which arguably makes it the stronger of the two approaches rather than the weaker one.
+KERNHELM's security model does not treat a userland policy engine as the final authority boundary.
 
-That doesn't mean it's immune to manipulation, though, and I'm not going to pretend otherwise. Something downstream can absolutely still be talked into wanting the wrong thing. It just can't act on that want without authority from a signed path nobody downstream can fake or talk their way around. The wanting stays completely unstoppable. The doing doesn't.
+Userland can reason.
 
-It also doesn't follow anything off the machine it's running on. If the agent writes a file and you copy that file somewhere else and run it on a box that isn't governed by any of this, that box's security is that box's problem now, not mine. This protects effects taken on the system that's enforcing it, while it's actively enforcing it, and it was never going to chase an artifact across a network boundary just because that would sound more impressive in a pitch.
+Userland can propose.
 
-Production hardening isn't finished either. Saying otherwise would just be a lie, and I'd much rather you catch me being honest about that than catch me overselling it later.
+Userland can coordinate.
 
-And nothing on the wrong side of the wall, agent, script, compromised process, anything at all, can flip its own switch. That's not an oversight I just haven't gotten around to fixing. That's the entire reason this exists in the first place. The day the requestor can reach its own leash, none of the rest of this matters anymore.
+Userland can present information to the user.
 
-None of this survives an actual kernel exploit either. If something gets real code execution at ring zero, every security mechanism on the machine is compromised at that point, this one included, the same way a kernel zero-day walks straight through SELinux or AppArmor too. What this defends against is a different and much more common problem: an untrusted userland requestor, no matter how clever or how compromised, that has zero authority over the kernel itself and is trying to talk, trick, or socially engineer its way into a privileged effect anyway. A ring-zero exploit is a different fight with a different answer, and I'm not claiming this is that answer.
+But the final enforcement decision for governed effects belongs below that layer.
 
-That's still not the same as game over for whatever's trying to use that access, though. Getting code execution at ring zero is the start of an attack, not the finish line. Whatever got in still has to get something out to make any of it worth doing, and pulling data out eventually touches egress, which is one of the exact surfaces this authority model is meant to govern as it expands. A kernel exploit buys silence at the admission wall specifically. It doesn't magically make every downstream receipt, policy layer, or egress control disappear. Harder and louder isn't the same guarantee as impossible, and I'm not going to pretend it is. But it's a meaningfully worse position for an attacker to be standing in than a clean, unnoticed compromise would be.
+The architectural objective is:
 
-## Where this actually stands
+> **Userland may request authority, but userland must not be able to manufacture, widen, disable, or rewrite the authority wall that constrains it.**
 
-I teased the filing date up top, so here's the rest of it.
+This distinction is central to KERNHELM.
 
-The provisional, filed February 2026, covers the architecture itself, the permit model, the stance system, the receipt chain, and the boot-corridor governance underneath all of it. All of that is on record now, with a priority date.
+The planner is not the authority.
 
-I didn't build a wall that cares what's actually knocking on it. Doesn't matter if it's a model that got fooled, a dependency that got quietly backdoored, or something that's already past your front door and looking for a way to climb further in. Come through authority admitted from the one path that's allowed to ever issue it.
+The executor is not the authority.
 
-- DesoPK
+The requestor is not the authority.
+
+The wall enforces authority produced through the governed path.
+
+---
+
+## Current Proof Scope
+
+KERNHELM is an active research and engineering project.
+
+The current experimental proof lineage has demonstrated the authority model at Linux kernel enforcement boundaries including protected file-object access, execution, and exact unlink/delete operations.
+
+The proof architecture includes concepts such as:
+
+* deny-first kernel enforcement;
+* target binding derived from the object reached at enforcement time;
+* bounded rights;
+* freshness and revocation checks;
+* separate authority admission;
+* mechanically constrained enforcement state;
+* receipts and proof instrumentation;
+* hostile testing of authority-transfer and enforcement assumptions.
+
+This demonstrates the core authority primitive.
+
+It does **not** mean that every possible privileged Linux effect is already governed.
+
+Additional effect classes remain part of the continuing engineering program.
+
+---
+
+## Performance
+
+An authority wall is only useful as a general operating-system primitive if its enforcement path is inexpensive enough to remain practical.
+
+Recorded proof-mode measurements of the current demonstrated wall have placed kernel hot-path allow and deny decisions in the **single-digit-microsecond range at p95** during the measured proof runs.
+
+Those measurements are deliberately narrow.
+
+They are measurements of the demonstrated proof-mode wall-check path, not claims about:
+
+* complete end-to-end authorization latency;
+* human approval latency;
+* every future governed effect class;
+* final production overhead;
+* all cryptographic operations;
+* commercial production readiness.
+
+Performance remains a first-class engineering requirement alongside security.
+
+---
+
+## What KERNHELM Does Not Claim
+
+KERNHELM is not:
+
+* a prompt-injection detector;
+* an AI alignment system;
+* a model-behavior classifier;
+* a replacement for human judgment;
+* a claim that compromised kernels cannot exist;
+* a claim that cryptographic key compromise is impossible;
+* a replacement for every existing Linux security mechanism;
+* a guarantee that all software exploitation becomes impossible;
+* a finished production security product.
+
+It addresses a narrower question:
+
+> **Can privileged effects be made dependent on bounded authority that the requesting side cannot create for itself?**
+
+That is the problem KERNHELM is attempting to solve.
+
+---
+
+## OathRune
+
+KERNHELM originated inside **OathRune**, a Linux operating-system project being built around three coequal requirements:
+
+**Security. Performance. Usability.**
+
+OathRune began from dissatisfaction with several common assumptions in modern computing:
+
+* telemetry should not be a default condition of using a computer;
+* ownership should mean more than possessing an administrator password;
+* security should not depend primarily on trusting privileged software;
+* strong security should not require turning the machine into an unpleasant appliance;
+* performance should not automatically be sacrificed in the name of stronger isolation.
+
+KERNHELM became the authority layer for that larger architecture.
+
+Its role is not to decide what a person is allowed to do with their own computer.
+
+Its role is to protect the person's authority over that computer from software operating without explicitly governed permission.
+
+---
+
+## RuneWisp
+
+OathRune also includes a separate artificial-cognition research program called **RuneWisp**.
+
+RuneWisp investigates persistent developmental artificial cognition: systems that accumulate history, memory, learned structure, and cognitive specialization through time rather than existing solely as isolated prompt-response invocations.
+
+KERNHELM and RuneWisp are separate research problems, but they intersect naturally.
+
+A sufficiently capable artificial cognitive system may eventually require meaningful authority over a computer in order to become genuinely useful.
+
+KERNHELM explores how such authority can exist without making the cognitive system itself the final security boundary.
+
+In that sense, KERNHELM is intended to provide both:
+
+```text
+a home for increasingly capable software
+```
+
+and:
+
+```text
+a wall protecting the person who owns that home
+```
+
+---
+
+## Research Status
+
+KERNHELM remains under active development.
+
+The internal engineering and proof lineage is substantially larger than this repository.
+
+This repository is intentionally **not** the canonical KERNHELM engineering tree.
+
+It does not contain the complete implementation archive, internal engineering documentation, proof packets, authority artifacts, build lineage, or current OathRune Master documentation.
+
+Those materials are maintained separately under a governed development and provenance process.
+
+This repository exists as a concise public description of the research direction and demonstrated architectural core.
+
+---
+
+## Intellectual Property
+
+The KERNHELM architecture is the subject of intellectual-property work begun during its development, including a provisional patent application filed in 2026.
+
+---
+
+## Research Principle
+
+KERNHELM grew from a broader idea:
+
+> **Do not build security around the hope that powerful software will always behave correctly. Build the machine so that behavior alone cannot manufacture authority.**
+
+Or, more simply:
+
+# Make trust irrelevant.
