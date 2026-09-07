@@ -213,11 +213,59 @@ Additional effect classes remain part of the continuing engineering program.
 
 ---
 
+## Experimental Evidence
+
+KERNHELM is being developed through an adversarial proof process rather than solely as a conceptual architecture.
+
+The current experimental lineage has exercised the authority boundary against both expected and deliberately hostile conditions, including:
+
+* governed effects with valid admitted authority;
+* governed effects with no admitted authority;
+* mismatched target identity;
+* insufficient effect rights;
+* stale or expired authority;
+* revoked authority;
+* replay and freshness failures;
+* attempts to substitute userland claims for kernel-observed target identity;
+* execution and protected-object access without matching authority;
+* exact unlink/delete enforcement;
+* failure-path and fail-closed behavior;
+* authority-transfer and proof-harness integrity conditions.
+
+The current demonstrated Linux proof surface includes kernel enforcement at protected file-object access, execution, and exact unlink/delete boundaries.
+
+### Recorded Proof-Mode Performance
+
+| Measurement                                     |       p50 |       p95 |
+| ----------------------------------------------- | --------: | --------: |
+| Kernel wall deny check                          |  2.790 µs |  4.550 µs |
+| Kernel wall allow check                         |  3.120 µs |  7.010 µs |
+| Revocation application — measured proof wrapper | 15.763 ms | 17.540 ms |
+
+These measurements were collected from the demonstrated proof-mode implementation and are intentionally reported as experimental results rather than production guarantees.
+
+They do **not** represent complete planning, policy evaluation, signing, human authorization, or end-to-end application latency.
+
+The purpose of the current evidence is narrower:
+
+> **To demonstrate that bounded authority can be mechanically enforced at the Linux kernel boundary while keeping the demonstrated enforcement decision itself within a practical hot-path cost.**
+
+KERNHELM's internal verification corpus, sealed proof artifacts, hostile-test lineage, receipts, and current engineering source are maintained separately from this public repository.
+
+The public repository intentionally exposes the research result and claim boundary rather than the complete trust-defining implementation corpus.
+
+---
+
 ## Performance
 
 An authority wall is only useful as a general operating-system primitive if its enforcement path is inexpensive enough to remain practical.
 
-Recorded proof-mode measurements of the current demonstrated wall have placed kernel hot-path allow and deny decisions in the **single-digit-microsecond range at p95** during the measured proof runs.
+Recorded proof-mode measurements of the current demonstrated wall place kernel hot-path allow and deny decisions in the **single-digit-microsecond range at p95** during the measured proof runs.
+
+The recorded proof-mode results are:
+
+* deny: **2.790 µs p50 / 4.550 µs p95**;
+* allow: **3.120 µs p50 / 7.010 µs p95**.
 
 Those measurements are deliberately narrow.
 
@@ -316,13 +364,27 @@ It does not contain the complete implementation archive, internal engineering do
 
 Those materials are maintained separately under a governed development and provenance process.
 
-This repository exists as a concise public description of the research direction and demonstrated architectural core.
+This repository exists as a concise public description of the research direction, demonstrated architectural core, and currently publishable experimental evidence.
+
+---
+
+## Public Research Output
+
+**KERNHELM — Make Trust Irrelevant**
+DesoPK, 2026
+Independent systems-security research project.
+
+This repository serves as the current public architectural and experimental overview of KERNHELM.
+
+A formal technical report describing the authority model, threat boundary, experimental implementation, adversarial proof methodology, and measured results is in preparation.
 
 ---
 
 ## Intellectual Property
 
 The KERNHELM architecture is the subject of intellectual-property work begun during its development, including a provisional patent application filed in 2026.
+
+Publication of this repository should not be interpreted as publication of the complete internal architecture, implementation lineage, or engineering corpus.
 
 ---
 
