@@ -1,48 +1,105 @@
 # KERNHELM
 
-## In Plain Language
+## Make Trust Irrelevant
 
-**KERNHELM is a general security architecture that places a hard authority boundary at the lowest practical enforceable level of the operating system — beneath AI, applications, and ordinary user software.**
+**KERNHELM is a general operating-system security substrate that places a hard authority boundary at the lowest practical enforceable level of the software stack — beneath AI, applications, services, and ordinary userland.**
 
-Software above that boundary may be extremely capable, but capability alone does not create permission.
+Its purpose is simple to state:
 
-A program can request an action. It cannot simply grant itself the authority to perform that action, rewrite the rules constraining it, or become trusted merely because it is intelligent, useful, or already privileged.
+> **Software may request power. It must not be able to manufacture the authority that grants that power.**
+
+KERNHELM moves the final decision about governed privileged effects into the kernel boundary.
+
+Software above that boundary may be extraordinarily capable.
+
+It may plan.
+
+It may reason.
+
+It may automate.
+
+It may administer applications.
+
+It may defend the machine.
+
+It may even be an advanced artificial intelligence.
+
+But capability alone does not create permission.
 
 The architectural separation is absolute by design:
 
-> **The software asking for an effect is not allowed to be the thing that decides whether it has authority to cause that effect.**
+> **The thing asking for an effect is not allowed to be the thing that decides whether it has authority to cause that effect.**
 
-For AI, this creates an important property:
+In ordinary security language, KERNHELM is an attempt to move beyond asking:
 
-> **The machine does not have to depend entirely on the AI's continued cooperation in order to remain secure.**
+> **“Do we trust this program?”**
 
-KERNHELM separates intelligence from sovereignty.
+and toward asking:
 
-**Capability is not permission.**
+> **“Does this exact attempted effect possess valid authority?”**
 
----
-
-## Make Trust Irrelevant
-
-KERNHELM is an experimental kernel-level authority system designed around a simple premise:
-
-> **Privileged effects should not occur merely because a process inherited enough authority to perform them.**
-
-Instead, software should receive narrowly bounded authority for the specific effects it has actually been permitted to perform.
-
-The long-term goal is to replace broad ambient trust with mechanically enforced authority boundaries.
-
-KERNHELM is being developed as part of **OathRune**, an independently built Linux operating-system research project focused on security, performance, user ownership, and the elimination of unnecessary ambient authority.
+That distinction is the core of the project.
 
 ---
 
-## The Problem
+# What KERNHELM Is — and Is Not
 
-Modern computers routinely grant software broad standing authority.
+KERNHELM is **not an AI sandbox**.
 
-A process may be able to read files, execute programs, inspect other processes, access devices, communicate over networks, or modify system state simply because of the account, container, namespace, capability set, or privilege level under which it happens to be running.
+It is not an application container.
 
-That creates a recurring security problem:
+It is not a permission wrapper around a particular program.
+
+It is not a prompt-injection detector.
+
+It is not a model-behavior classifier.
+
+It is not a conventional userland policy engine.
+
+It is a **general authority architecture for the operating system itself**.
+
+A sandbox primarily answers:
+
+> **Where is this program allowed to operate?**
+
+KERNHELM asks a deeper question:
+
+> **Where does the authority to cause this privileged effect come from at all?**
+
+A useful shorthand is:
+
+> **A sandbox constrains where software can operate. KERNHELM constrains where authority can come from.**
+
+Remove AI from the machine entirely and KERNHELM still makes sense.
+
+A browser, daemon, package manager, helper process, game, driver utility, malicious payload, remote attacker acting through compromised software, or artificial intelligence ultimately encounters the same underlying authority problem.
+
+That is why KERNHELM is a general security substrate rather than an AI containment system.
+
+AI is simply one of the clearest and potentially strongest applications of the architecture.
+
+---
+
+# The Problem
+
+Modern computers routinely give software broad standing authority.
+
+A process may be able to:
+
+* read files;
+* write files;
+* execute programs;
+* inspect other processes;
+* communicate over networks;
+* access devices;
+* modify system state;
+* invoke privileged helpers;
+* administer services;
+* or affect other parts of the machine
+
+because of the user, privilege level, container, namespace, capability set, service identity, or execution context under which it happens to be running.
+
+This creates a familiar security chain:
 
 ```text
 authority is granted broadly
@@ -54,15 +111,73 @@ software is compromised, confused, manipulated, or simply wrong
 the inherited authority is still real
 ```
 
-Security systems can reduce this risk through sandboxing, mandatory access controls, privilege separation, capabilities, policy engines, virtualization, and other important mechanisms.
+Traditional security systems mitigate this problem through important mechanisms including:
 
-KERNHELM explores a different layer of the problem:
+* discretionary access controls;
+* mandatory access controls;
+* privilege separation;
+* capabilities;
+* namespaces;
+* sandboxing;
+* seccomp;
+* virtualization;
+* policy engines;
+* containers;
+* application isolation.
 
-> **What if the requesting process never possessed enough standing authority to make the privileged effect happen by itself?**
+KERNHELM does not require those mechanisms to disappear.
+
+It can strengthen a system that still uses them.
+
+But its long-term question is more fundamental:
+
+> **Why should software possess broad standing ambient authority in the first place?**
+
+KERNHELM explores whether privileged effects can instead depend on explicit, bounded, independently admitted authority that the requesting software cannot create for itself.
 
 ---
 
-## The Core Idea
+# From Zero Trust to Mechanical Law
+
+“Zero trust” is normally expressed as a policy principle:
+
+> Do not assume an actor should be trusted merely because of where it is or who it claims to be.
+
+KERNHELM pushes that idea farther down the stack.
+
+Its long-term objective is to make **trust itself less relevant to whether privileged effects can occur**.
+
+Instead of relying primarily on:
+
+```text
+trusted process
+        ↓
+broad privilege
+        ↓
+expected good behavior
+```
+
+KERNHELM moves toward:
+
+```text
+requested effect
+        ↓
+independently admitted bounded authority
+        ↓
+kernel verifies actual effect + authority
+        ↓
+allow or real deny
+```
+
+The kernel does not need to decide whether the requesting software is “good.”
+
+It needs to determine whether valid authority exists for the effect actually reaching the wall.
+
+This moves zero-trust reasoning toward **mechanical law at the machine's core software authority boundary**.
+
+---
+
+# The Core Idea
 
 KERNHELM separates:
 
@@ -82,7 +197,7 @@ Conceptually:
 Untrusted Requestor
         │
         ▼
-Concrete Proposed Action
+Proposed Action
         │
         ▼
 Governed Authorization Path
@@ -93,197 +208,132 @@ Bounded Authority
         ▼
 Kernel Enforcement
         │
-        ├── fits admitted authority → effect may proceed
+        ├── authority fits actual effect → effect may proceed
         │
-        └── does not fit            → deny
+        └── authority does not fit       → real denial
 ```
 
-The requesting process does not mint its own authority.
+The requesting software does not mint its own authority.
 
-It may propose an action, but the authority needed to perform a governed privileged effect must originate through a separate trusted path.
+It may propose an action.
 
-The enforcement boundary then checks the effect that is actually occurring rather than trusting the requestor's description of what it intended to do.
+It may explain why it wants that action.
 
-This creates a simple underlying rule:
+It may plan an extremely complex sequence of actions.
 
-> **No software should be trusted to define the limits of its own power.**
+It may be correct.
 
----
+It may be wrong.
 
-## Why This Matters for AI Agents
+None of those facts create authority.
 
-AI makes the ambient-authority problem unusually important because intelligence and authority are normally coupled together when autonomous systems become useful.
-
-An agent becomes more useful as it gains the ability to:
-
-* read and modify files;
-* invoke tools;
-* execute programs;
-* manage applications;
-* communicate with services;
-* control parts of a computer;
-* observe and respond to changing conditions;
-* detect and respond to threats;
-* carry out long sequences of actions.
-
-But those abilities normally require granting the agent increasingly broad authority and then trusting it to use that authority correctly.
-
-Prompt injection, model error, compromised dependencies, malicious tool output, mistaken reasoning, unexpected software interactions, hostile external systems, or future behaviors that were never anticipated can transform useful authority into dangerous authority.
-
-The common response is therefore to restrict what the agent can do.
-
-KERNHELM explores another possibility:
-
-> **Build a stronger authority boundary underneath increasingly capable software so that usefulness does not require surrendering control of the machine.**
-
-The agent is not required to be the security boundary.
-
-It may reason incorrectly.
-
-It may be manipulated.
-
-It may request an effect that should never occur.
-
-It may become far more capable than the systems that originally surrounded it.
-
-None of those facts automatically create authority.
-
-The kernel boundary still requires valid admitted authority for the governed effect.
-
-That leads to two important distinctions:
-
-> **Intelligence is not authority.**
-
-and:
-
-> **Capability is not permission.**
-
-KERNHELM does not attempt to make an AI safe by requiring it to be incapable.
-
-Instead, it explores whether increasingly capable software can operate inside a system where its ability to reason about an action remains fundamentally separate from its authority to make that action happen.
+The authority required for a governed privileged effect must originate through a separate governed path.
 
 ---
 
-## KERNHELM Is Not AI-Specific
+# Authority Works More Like a Cryptographic Coin Sorter
 
-KERNHELM was not originally designed as an AI-safety system.
+A useful nontechnical analogy is a coin sorter.
 
-It is a general security architecture.
+KERNHELM is not intended to sit at the wall asking:
 
-That generality is exactly what makes its application to advanced AI unusually powerful.
+> “Do I recognize this program, and do I trust it?”
 
-From the enforcement boundary's perspective, an AI agent, compromised service, malicious script, vulnerable application, remote attacker acting through compromised software, or unexpected userland process ultimately presents the same fundamental question:
+Instead, the attempted effect must arrive with authority that mechanically fits the effect being attempted.
 
-> **Does this attempted effect possess admitted authority?**
-
-The wall does not need to determine whether the actor is an AI before enforcing authority.
-
-It governs effects.
-
-This creates a two-sided security model for systems that contain increasingly capable AI.
-
-### Hostile AI Outside the System
-
-An outside AI may attempt to exploit applications, manipulate services, compromise software, deceive an internal agent, abuse exposed interfaces, or otherwise cause effects on the machine.
-
-KERNHELM does not depend on recognizing the attacker as an AI.
-
-If the attack reaches software above the authority wall, the resulting governed effects remain subject to the same authority boundary.
-
-Compromising or manipulating software does not, by itself, manufacture additional authority.
-
-### Native AI Defending the System
-
-At the same time, a native AI defending the machine does not need to receive unrestricted authority merely because it is the defender.
-
-It may:
-
-* observe suspicious behavior;
-* reason about an attack;
-* correlate events;
-* adapt its defensive strategy;
-* identify compromised components;
-* propose isolation or containment;
-* request defensive actions;
-* assist the user during an active incident.
-
-But the native AI remains on the requesting side of the authority boundary.
-
-It does not become sovereign over the machine merely because its intentions are defensive.
-
-The result is an unusual security property:
-
-> **A system can give its defender enormous intelligence without automatically giving that defender unlimited authority.**
-
-The hostile actor does not gain authority merely because it found a path into software above the wall.
-
-The defending actor does not gain unlimited authority merely because it is trusted to defend the wall.
-
-KERNHELM remains underneath both.
-
-In that sense:
-
-> **KERNHELM separates intelligence from sovereignty.**
-
-AI may ultimately become one of KERNHELM's strongest applications.
-
-But KERNHELM does not depend on AI-specific assumptions to provide that protection because the architecture was built around a more general rule:
-
-> **No software actor — intelligent or otherwise — should be able to turn capability into authority by itself.**
-
----
-
-## Authority Is Intended to Be Narrow
-
-KERNHELM is designed around bounded authority rather than standing administrator-like privilege.
-
-Authority can be constrained by properties such as:
+The “coin” may be constrained by properties including:
 
 * effect type;
-* target;
+* target identity;
 * rights;
 * plan or request identity;
-* system posture;
+* stance;
+* operation budget;
+* byte budget;
 * freshness;
 * expiration;
 * revocation state;
-* delegation limits.
+* delegation depth.
 
-A child or delegated authority may become narrower.
+If the authority does not fit the slot, it does not become valid because the software insists harder.
 
-It must not become broader merely because the holder asks for more.
+The requesting side cannot simply manufacture a larger coin.
 
-When additional authority is required, the request must return through the governed authorization path.
+A derived authority may become narrower.
 
-This is important because authorization is not intended to mean:
+It must not silently become broader.
 
-> "This software is trusted."
+This is why KERNHELM is related conceptually to capability-security systems while pursuing a broader operating-system authority model.
 
-It is intended to mean something closer to:
-
-> "This specific authority exists for this bounded class of effect under these constraints."
+> **Authority is something that must fit the effect, not a reputation possessed by the software asking for it.**
 
 ---
 
-## The Kernel Is the Wall
+# Planning, Intent, Authority, and Enforcement Are Different Things
 
-KERNHELM's security model does not treat a userland policy engine as the final authority boundary.
+KERNHELM deliberately separates several roles that conventional systems often collapse together.
 
-Userland can reason.
+## Planning
 
-Userland can propose.
+An untrusted planner decides what it would like to accomplish.
 
-Userland can coordinate.
+That planner may be:
 
-Userland can present information to the user.
+* ordinary application logic;
+* automation;
+* a security daemon;
+* a human-facing assistant;
+* an AI agent;
+* RuneWisp;
+* or another future cognition system.
 
-But the final enforcement decision for governed effects belongs below that layer.
+Planning does not create authority.
+
+## Intent and proposal shaping
+
+OathRune's broader architecture may use sophisticated reasoning above the wall to interpret intent, classify proposals, reduce overly broad requests, correlate dependencies, or redirect an unsafe request toward a safer alternative.
+
+That layer may eventually become extremely sophisticated.
+
+It still does not become the authority source.
+
+Fuzzy reasoning remains above the wall.
+
+## Authorization
+
+A separate governed authorization path determines whether bounded authority should exist.
+
+The requesting planner must not be able to sign, mint, widen, renew, counterfeit, or silently extend that authority for itself.
+
+## Enforcement
+
+KERNHELM performs the final governed-effect check at the kernel boundary.
+
+The enforcement path is intentionally simpler than the reasoning above it.
+
+> **The intelligence may think. The wall must enforce.**
+
+---
+
+# The Kernel Is the Wall
+
+KERNHELM does not treat a normal userland service as the final security boundary.
+
+Userland can:
+
+* reason;
+* propose;
+* coordinate;
+* classify;
+* display;
+* explain;
+* request.
+
+But for governed effects, final enforcement belongs beneath that layer.
 
 The architectural objective is:
 
 > **Userland may request authority, but userland must not be able to manufacture, widen, disable, or rewrite the authority wall that constrains it.**
-
-This distinction is central to KERNHELM.
 
 The planner is not the authority.
 
@@ -293,199 +343,741 @@ The requestor is not the authority.
 
 The AI is not the authority.
 
-The wall enforces authority produced through the governed path.
+And ordinary runtime userland is not the authority.
 
-This keeps the final security boundary beneath the software whose behavior is being governed.
+Ring 0 is the enforcement wall.
 
 ---
 
-## Current Proof Scope
+# KERNHELM Enforces the Effect the Kernel Actually Sees
+
+This distinction is important.
+
+A security system becomes fragile if the requesting software can simply describe an action one way and perform something materially different.
+
+KERNHELM is designed so authority is checked against the effect and target identity actually observed at the enforcement boundary.
+
+The requestor's description is not the final truth.
+
+For example, target identity for demonstrated and specified file-object authority is derived from kernel-visible object identity rather than trusting a filename supplied by userland.
+
+The principle is:
+
+> **Do not ask software what it touched and simply believe the answer. Bind authority to what the kernel actually sees being acted upon.**
+
+This helps prevent userland descriptions from becoming substitutes for enforcement truth.
+
+---
+
+# Authority Is Intended to Be Narrow
+
+KERNHELM is designed around bounded authority rather than standing administrator-like privilege.
+
+Authority can be constrained by properties including:
+
+* effect type;
+* target;
+* rights;
+* plan or request identity;
+* system posture;
+* operation budget;
+* byte budget;
+* freshness;
+* expiration;
+* monotonic state;
+* revocation state;
+* delegation limits.
+
+A delegated authority may become narrower.
+
+It must not become broader merely because the holder requests more.
+
+When additional authority is required, the request must return through the governed authorization path.
+
+Authorization therefore does not mean:
+
+> **“This software is trusted.”**
+
+It means something closer to:
+
+> **“This specific bounded authority exists for this class of effect, against this target, under these conditions.”**
+
+---
+
+# Reduce-Only Authority
+
+One of KERNHELM's central authority laws is that delegated authority should attenuate rather than expand.
+
+A child authority may receive:
+
+* fewer rights;
+* shorter lifetime;
+* lower operation budgets;
+* lower byte budgets;
+* fewer valid targets or routes;
+* fewer remaining delegation hops;
+* tighter system constraints.
+
+It must not silently acquire more authority than its parent.
+
+This makes authority reduction a structural property rather than merely a request that software behave politely.
+
+> **Authority may shrink as it moves. Widening requires returning to governance.**
+
+---
+
+# Revocation and Freshness
+
+Authority that was valid once must not automatically remain valid forever.
+
+KERNHELM's authority model includes freshness and revocation properties intended to reject:
+
+* expired authority;
+* stale authority;
+* replayed authority;
+* revoked authority;
+* mismatched plan state;
+* mismatched system state;
+* reused authority outside its valid context.
+
+Revocation is treated as part of the authority lifecycle rather than as cleanup after the fact.
+
+A revoked authority is supposed to stop authorizing future governed effects.
+
+The current proof lineage separately measures hot-path allow/deny enforcement and revocation application; these are not the same performance path and should not be conflated.
+
+---
+
+# Cryptographic Authority
+
+KERNHELM does not intend authority to be a mutable boolean stored in an application configuration file.
+
+Authority objects are cryptographically bound artifacts.
+
+The current v1 proof and contract lineage uses deterministic SigilMesh authority objects with:
+
+* canonical encoding;
+* explicit issuer identity;
+* rights;
+* budgets;
+* deadlines;
+* nonces;
+* monotonic counters;
+* plan binding;
+* target and route constraints;
+* signatures.
+
+The requesting software cannot legitimately create authority merely by modifying its own local state.
+
+The trusted authorization path owns the signing authority.
+
+KERNHELM then consumes and verifies authority at the wall.
+
+---
+
+# Post-Quantum Direction and Legacy Compatibility
+
+KERNHELM's broader cryptographic architecture is intended to support **post-quantum operation while retaining governed compatibility with legacy cryptographic suites**.
+
+The authority model is not intended to depend forever on one signature algorithm, one hash function, or one generation of cryptography.
+
+The important architectural law is stable:
+
+> **Authority must be independently provable and mechanically verifiable even when the cryptographic machinery used to prove it evolves.**
+
+The currently documented **v1 proof contract uses Ed25519 signatures and SHA-256 plan/target binding**.
+
+That is the current proof primitive, not a claim that those algorithms represent KERNHELM's permanent cryptographic ceiling.
+
+The larger design direction is crypto-agile:
+
+* newer cryptographic suites can become governing suites;
+* post-quantum suites can be introduced without redefining the authority model itself;
+* legacy authority formats can remain governed where compatibility is required;
+* trust-anchor changes are explicit governed events rather than silent replacement;
+* migration does not require treating every historical authority artifact as permanently equivalent to every future one.
+
+In other words:
+
+> **The cryptography may evolve. The authority law remains.**
+
+---
+
+# Cryptographic Receipts and Forensic Truth
+
+Enforcement without evidence leaves a dangerous blind spot.
+
+KERNHELM therefore treats forensic receipts as part of the authority architecture rather than optional debug logging.
+
+Meaningful governed events are intended to produce VaultScroll evidence for events such as:
+
+* authority minting;
+* allow;
+* deny;
+* revoke;
+* tighten;
+* stance transition;
+* governed promotion;
+* failure conditions.
+
+VaultScroll is designed as an append-oriented, cryptographically chained forensic spine.
+
+The important distinction is that KERNHELM does not rely solely on an application writing:
+
+```text
+"I behaved correctly."
+```
+
+Kernel-wall outcomes are coupled to governed forensic evidence.
+
+The design goal is that consequential governed actions leave verifiable evidence tied to the authority and decision lineage rather than depending on mutable application logs controlled by the actor being observed.
+
+This does not mean that compromised hardware, compromised cryptographic roots, or a compromised kernel are magically impossible.
+
+It means that within KERNHELM's stated trust boundary, the software requesting an effect is not also entrusted with creating the authoritative record of whether that effect was legitimate.
+
+---
+
+# Why This Matters for AI
+
+AI makes the ambient-authority problem unusually visible.
+
+An AI becomes more useful as it gains the ability to:
+
+* read files;
+* modify files;
+* invoke tools;
+* execute programs;
+* operate applications;
+* communicate with services;
+* manage long-running workflows;
+* observe system state;
+* interact with networks;
+* respond to changing conditions;
+* administer parts of a computer;
+* detect and respond to threats.
+
+But useful capability is often implemented by granting increasingly broad authority and then trusting the AI to use that authority correctly.
+
+That creates an obvious problem.
+
+An AI may be:
+
+* mistaken;
+* prompt-injected;
+* manipulated;
+* deceived by malicious tool output;
+* affected by compromised dependencies;
+* operating on incomplete information;
+* pursuing a poorly specified objective;
+* compromised by another system;
+* or simply more capable than its surrounding security assumptions anticipated.
+
+KERNHELM asks a complementary AI-safety question:
+
+> **Can increasingly powerful artificial intelligence remain useful without becoming sovereign over the computer underneath it?**
+
+KERNHELM's answer is to separate intelligence from authority.
+
+> **Intelligence is not authority.**
+
+> **Capability is not permission.**
+
+An AI may reason about what should happen.
+
+That does not mean the AI automatically possesses the authority required to make it happen.
+
+---
+
+# KERNHELM Is Not an AI Alignment System
+
+KERNHELM does not claim to solve whether an AI:
+
+* has good goals;
+* remains aligned;
+* is honest;
+* is corrigible;
+* reasons correctly;
+* understands human values;
+* becomes deceptive;
+* resists manipulation;
+* or always chooses desirable actions.
+
+Those are different research problems.
+
+KERNHELM addresses another layer:
+
+> **Whatever the software thinks, wants, predicts, or intends should not automatically determine what authority it possesses.**
+
+This matters because behavioral safety and authority safety are not the same thing.
+
+A perfectly behaved AI does not require unlimited ambient authority to prove that it is safe.
+
+And an imperfectly behaved AI should not automatically gain unlimited consequences merely because something above the kernel trusted it.
+
+---
+
+# KERNHELM Is Not AI-Specific
+
+KERNHELM was not originally designed as an AI-safety system.
+
+It is a general security substrate.
+
+That is exactly why its application to advanced AI is powerful.
+
+From the enforcement boundary's perspective, these all eventually reduce to an authority question:
+
+* an AI agent;
+* a compromised service;
+* malware;
+* a malicious script;
+* a vulnerable application;
+* a privileged helper;
+* a remote attacker operating through compromised software;
+* an unexpected userland process;
+* a native artificial intelligence.
+
+The wall does not need to identify something as an AI before enforcing authority.
+
+It governs effects.
+
+> **No software actor — intelligent or otherwise — should be able to turn capability into authority by itself.**
+
+---
+
+# Outside AI vs. Native AI
+
+This produces an unusual two-sided property for AI-enabled systems.
+
+Imagine a machine containing a native artificial intelligence while an external hostile AI is attacking it.
+
+The external AI may attempt to:
+
+* exploit applications;
+* manipulate services;
+* compromise dependencies;
+* deceive the native AI;
+* abuse network-facing software;
+* hijack automation;
+* or cause privileged effects indirectly.
+
+KERNHELM does not need to identify the attacker as an AI.
+
+If the attack reaches software above the wall, the resulting governed effects still encounter the authority boundary.
+
+Compromising software does not, by itself, mint new authority.
+
+At the same time, the native defending AI does not receive unrestricted control merely because it is defending the machine.
+
+The native AI may:
+
+* observe;
+* correlate;
+* reason;
+* detect anomalies;
+* model the attacker;
+* adapt;
+* propose containment;
+* request isolation;
+* reroute work;
+* assist the user;
+* participate in active defense.
+
+But it remains on the requesting side of the authority boundary.
+
+The defender does not become sovereign simply because its intentions are defensive.
+
+This creates a potentially important security property:
+
+> **A system can give its defender enormous intelligence without automatically giving that defender unlimited authority.**
+
+The attacker does not receive authority because it penetrated software above the wall.
+
+The defender does not receive unlimited authority because it is trusted to fight the attacker.
+
+KERNHELM remains underneath both.
+
+> **KERNHELM separates intelligence from sovereignty.**
+
+---
+
+# The “If Someone Builds It” Problem
+
+Much of advanced-AI risk ultimately confronts some version of this question:
+
+> **What happens if someone eventually builds an artificial intelligence powerful enough to be dangerous?**
+
+KERNHELM does not claim to prevent anyone from building such a system.
+
+It asks what the machine underneath that system should look like if someone does.
+
+The premise is straightforward:
+
+> **If someone eventually builds an AI powerful enough to be dangerous, the operating system underneath it should not simply hand that intelligence sovereignty over the machine.**
+
+KERNHELM therefore attacks one particular junction between intelligence and consequence:
+
+```text
+intelligence
+    ↓
+intent
+    ↓
+requested effect
+    ↓
+KERNHELM authority boundary
+    ↓
+admitted or denied effect
+```
+
+rather than:
+
+```text
+intelligence
+    ↓
+broad inherited privilege
+    ↓
+effect
+```
+
+This does not solve every form of advanced-AI risk.
+
+It attempts to make one important path from cognition to consequential machine effects mechanically governable.
+
+---
+
+# Current Enforcement Architecture
+
+KERNHELM targets privileged-effect boundaries rather than one application type.
+
+The broader architecture includes enforcement families for areas such as:
+
+* process execution;
+* protected filesystem access;
+* network effects;
+* process inspection and tracing;
+* device interaction;
+* helper services;
+* driver arenas;
+* controlled boot transitions;
+* future cognition consumers.
+
+The architecture uses Linux kernel enforcement mechanisms including LSM-class enforcement points and related kernel control surfaces.
+
+At the engineering level, the intended model is:
+
+> **the untrusted executor attempts the real operation, and the kernel either permits the governed effect or returns a real denial.**
+
+A wrapper pretending that an action failed is not equivalent to KERNHELM enforcement.
+
+A userland tool claiming success without kernel authorization is not equivalent to KERNHELM enforcement.
+
+The wall must own the final verdict.
+
+---
+
+# Current Demonstrated Proof Scope
 
 KERNHELM is an active research and engineering project.
 
-The current experimental proof lineage has demonstrated the authority model at Linux kernel enforcement boundaries including protected file-object access, execution, and exact unlink/delete operations.
+The current experimental Linux proof lineage has demonstrated the authority model at kernel enforcement boundaries including:
 
-The proof architecture includes concepts such as:
+* protected file-object access;
+* execution;
+* exact unlink/delete operations.
+
+The proof architecture includes:
 
 * deny-first kernel enforcement;
+* independently admitted authority;
 * target binding derived from the object reached at enforcement time;
 * bounded rights;
-* freshness and revocation checks;
-* separate authority admission;
+* freshness checks;
+* replay resistance;
+* revocation checks;
 * mechanically constrained enforcement state;
-* receipts and proof instrumentation;
-* hostile testing of authority-transfer and enforcement assumptions.
+* forensic receipts and proof instrumentation;
+* hostile testing of authority-transfer assumptions;
+* hostile testing of wall-control assumptions.
 
 This demonstrates the core authority primitive.
 
-It does **not** mean that every possible privileged Linux effect is already governed.
+It does **not** mean that every Linux syscall, every device class, every network effect, or every possible privileged effect is already governed by the present proof implementation.
 
-Additional effect classes remain part of the continuing engineering program.
+Those effect families remain part of the continuing engineering program.
 
-The distinction matters.
-
-KERNHELM's architectural objective is broad, but its public claims remain bounded to what the current proof lineage has actually demonstrated.
+The distinction between **architectural scope** and **currently demonstrated proof scope** is intentional.
 
 ---
 
-## Experimental Evidence
+# Experimental Evidence
 
-KERNHELM is being developed through an adversarial proof process rather than solely as a conceptual architecture.
+KERNHELM is being developed through adversarial proof rather than solely through architectural argument.
 
-The current experimental lineage has exercised the authority boundary against both expected and deliberately hostile conditions, including:
+The current experimental lineage has tested expected and deliberately hostile conditions including:
 
-* governed effects with valid admitted authority;
-* governed effects with no admitted authority;
+* valid admitted authority;
+* missing authority;
 * mismatched target identity;
-* insufficient effect rights;
-* stale or expired authority;
+* insufficient rights;
+* stale authority;
+* expired authority;
 * revoked authority;
 * replay and freshness failures;
-* attempts to substitute userland claims for kernel-observed target identity;
-* execution and protected-object access without matching authority;
+* attempts to substitute userland claims for kernel-observed identity;
+* execution without matching authority;
+* protected-object access without matching authority;
 * exact unlink/delete enforcement;
-* failure-path and fail-closed behavior;
-* authority-transfer and proof-harness integrity conditions.
+* fail-closed behavior;
+* authority-transfer failures;
+* enforcement-state tampering attempts;
+* proof-harness integrity conditions.
 
-The current demonstrated Linux proof surface includes kernel enforcement at protected file-object access, execution, and exact unlink/delete boundaries.
+The engineering methodology deliberately distinguishes:
 
-### Recorded Proof-Mode Performance
+* what the architecture intends;
+* what source code currently implements;
+* what a proof harness demonstrates;
+* what has been independently re-exercised;
+* and what has not yet been crowned as production behavior.
+
+KERNHELM's internal verification corpus, engineering source, sealed proof artifacts, hostile-test lineage, receipts, and OathRune Master documentation are maintained separately from this public repository.
+
+This repository intentionally exposes the research result and public claim boundary rather than the complete trust-defining implementation corpus.
+
+---
+
+# Recorded Proof-Mode Performance
+
+An authority wall is only useful as general operating-system infrastructure if enforcement is inexpensive enough to remain practical.
+
+The current demonstrated proof-mode measurements include:
 
 | Measurement                                     |       p50 |       p95 |
 | ----------------------------------------------- | --------: | --------: |
 | Kernel wall deny check                          |  2.790 µs |  4.550 µs |
 | Kernel wall allow check                         |  3.120 µs |  7.010 µs |
 | Revocation application — measured proof wrapper | 15.763 ms | 17.540 ms |
+| Revocation inner path — measured proof wrapper  |  2.612 ms |  4.389 ms |
 
-These measurements were collected from the demonstrated proof-mode implementation and are intentionally reported as experimental results rather than production guarantees.
+The current wall hot-path allow and deny verdicts therefore remain within the **single-digit-microsecond range at p95** in the measured proof-mode runs.
 
-They do **not** represent complete planning, policy evaluation, signing, human authorization, or end-to-end application latency.
+These measurements are intentionally narrow.
 
-The purpose of the current evidence is narrower:
+They are not claims about:
 
-> **To demonstrate that bounded authority can be mechanically enforced at the Linux kernel boundary while keeping the demonstrated enforcement decision itself within a practical hot-path cost.**
-
-KERNHELM's internal verification corpus, sealed proof artifacts, hostile-test lineage, receipts, and current engineering source are maintained separately from this public repository.
-
-The public repository intentionally exposes the research result and claim boundary rather than the complete trust-defining implementation corpus.
-
----
-
-## Performance
-
-An authority wall is only useful as a general operating-system primitive if its enforcement path is inexpensive enough to remain practical.
-
-Recorded proof-mode measurements of the current demonstrated wall place kernel hot-path allow and deny decisions in the **single-digit-microsecond range at p95** during the measured proof runs.
-
-The recorded proof-mode results are:
-
-* deny: **2.790 µs p50 / 4.550 µs p95**;
-* allow: **3.120 µs p50 / 7.010 µs p95**.
-
-Those measurements are deliberately narrow.
-
-They are measurements of the demonstrated proof-mode wall-check path, not claims about:
-
-* complete end-to-end authorization latency;
-* human approval latency;
+* full planning latency;
+* intent interpretation;
+* policy authoring;
+* human authorization latency;
+* every cryptographic operation;
 * every future governed effect class;
+* complete end-to-end application latency;
 * final production overhead;
-* all cryptographic operations;
 * commercial production readiness.
+
+Revocation is also a separate path from an ordinary hot-path allow/deny decision and should not be described as a sub-10-microsecond operation based on the current evidence.
+
+The current proof result is narrower and more useful:
+
+> **Bounded authority can be mechanically checked at the Linux kernel boundary while keeping the demonstrated hot-path wall verdict within practical microsecond-class cost.**
 
 Performance remains a first-class engineering requirement alongside security.
 
-The long-term objective is not merely to create a stronger authority model.
+---
 
-It is to create one inexpensive enough to serve as ordinary system infrastructure.
+# Why Performance Matters
+
+Security mechanisms that are too expensive to use everywhere eventually become mechanisms that developers bypass.
+
+KERNHELM is therefore not being designed around the assumption that security and performance are opposing goals.
+
+The long-term objective is a wall inexpensive enough to become ordinary infrastructure.
+
+A security primitive intended to replace ambient authority must be usable frequently, not reserved only for rare high-risk operations.
+
+That is why hot-path latency is treated as an architectural constraint rather than post-development polish.
 
 ---
 
-## What KERNHELM Does Not Claim
+# Existing Security Can Remain
+
+KERNHELM does not require every existing security mechanism to disappear on day one.
+
+It can coexist with:
+
+* Linux DAC;
+* capabilities;
+* namespaces;
+* seccomp;
+* AppArmor or other MAC systems;
+* virtualization;
+* containers;
+* cgroups;
+* network policy;
+* secure boot infrastructure;
+* conventional application isolation.
+
+Those mechanisms can continue providing defense in depth.
+
+KERNHELM addresses a different primitive beneath them:
+
+> **Where does authority for a governed privileged effect come from?**
+
+In transitional systems, KERNHELM can bolster conventional security.
+
+Its more ambitious end-state is a system where standing ambient authority itself becomes increasingly unnecessary.
+
+---
+
+# Beyond Least Privilege
+
+Least privilege traditionally asks:
+
+> **How little standing privilege can this process be given while still functioning?**
+
+KERNHELM's long-term question is more aggressive:
+
+> **Why should the process possess standing privilege at all if authority can instead be admitted for the effects it actually needs?**
+
+That is the distinction between reducing ambient authority and attempting eventually to remove it as the dominant security primitive.
+
+KERNHELM is therefore not merely a finer-grained permissions system.
+
+Its long-term architectural direction is to replace broad inherited authority with bounded, explicit, mechanically enforced effect authority.
+
+---
+
+# Userland Cannot Be the Final Authority Over the Wall
+
+The person who owns the machine and the software running inside the machine are not the same security principal.
+
+KERNHELM is not intended to protect institutions from the machine's owner.
+
+It is intended to protect the owner's authority over the machine from software operating without governed permission.
+
+Runtime userland therefore must not become an administrative backdoor into KERNHELM itself.
+
+Governance changes that affect the trust boundary belong in governed channels outside ordinary runtime-userland authority.
+
+This is critical because a security wall that can be casually rewritten from the environment it constrains is not a meaningful wall.
+
+---
+
+# Drawbridge and Boot Governance
+
+Some trust transitions cannot safely be treated as ordinary runtime administration.
+
+OathRune therefore separates runtime enforcement from governed boot-corridor changes.
+
+Drawbridge is the pre-runtime governance surface for trust-defining transitions such as:
+
+* approved boot state;
+* governed stance configuration;
+* trust-anchor transitions;
+* recovery;
+* promotion of staged changes.
+
+This keeps runtime software from quietly turning administrative convenience into a path around the authority model.
+
+KERNHELM governs effects.
+
+Drawbridge governs trust-defining boot transitions.
+
+They are related but not interchangeable.
+
+---
+
+# What KERNHELM Does Not Claim
 
 KERNHELM is not:
 
-* a prompt-injection detector;
 * an AI alignment system;
+* a prompt-injection detector;
 * a model-behavior classifier;
+* an application sandbox;
+* a container runtime;
 * a replacement for human judgment;
-* a claim that compromised kernels cannot exist;
+* a claim that compromised kernels are impossible;
+* a claim that compromised hardware is impossible;
 * a claim that cryptographic key compromise is impossible;
 * a replacement for every existing Linux security mechanism;
 * a guarantee that all software exploitation becomes impossible;
 * a claim that every Linux effect is already governed;
-* a finished production security product.
+* a claim that the current proof implementation is a finished commercial security product;
+* a claim that advanced AI risk has one simple solution.
 
-It addresses a narrower question:
+It addresses a narrower but potentially foundational question:
 
 > **Can privileged effects be made dependent on bounded authority that the requesting side cannot create for itself?**
 
 That is the problem KERNHELM is attempting to solve.
 
-The distinction is important for AI.
-
-KERNHELM does not claim to guarantee that a sufficiently advanced AI will always reason correctly, remain aligned, resist manipulation, or choose desirable goals.
-
-Its security proposition is different:
-
-> **Whatever the software thinks, wants, predicts, or intends should not automatically determine what authority it possesses.**
-
 ---
 
-## OathRune
+# OathRune
 
-KERNHELM originated inside **OathRune**, a Linux operating-system project being built around three coequal requirements:
+KERNHELM originated inside **OathRune**, an independently built Linux operating-system research project organized around three coequal requirements:
 
-**Security. Performance. Usability.**
+# Security. Performance. Usability.
 
 OathRune began from dissatisfaction with several common assumptions in modern computing:
 
 * telemetry should not be a default condition of using a computer;
 * ownership should mean more than possessing an administrator password;
 * security should not depend primarily on trusting privileged software;
+* powerful software should not automatically receive ambient sovereignty;
 * strong security should not require turning the machine into an unpleasant appliance;
-* performance should not automatically be sacrificed in the name of stronger isolation.
+* performance should not automatically be sacrificed in the name of isolation.
 
 KERNHELM became the authority layer for that larger architecture.
 
-Its role is not to decide what a person is allowed to do with their own computer.
+Its purpose is not to decide what a person is permitted to do with their own machine.
 
-Its role is to protect the person's authority over that computer from software operating without explicitly governed permission.
+Its purpose is to protect the person's authority over that machine from software operating without explicitly governed permission.
 
-That distinction is fundamental to OathRune's security model:
+A concise OathRune distinction is:
 
 > **The person is protected. Userland is governed.**
 
-KERNHELM is intended to preserve ownership of the machine rather than transfer that ownership to whichever software currently possesses the broadest privilege.
-
 ---
 
-## RuneWisp
+# RuneWisp
 
-OathRune also includes a separate artificial-cognition research program called **RuneWisp**.
+OathRune also contains a separate artificial-cognition research program called **RuneWisp**.
 
-RuneWisp investigates persistent developmental artificial cognition: systems that accumulate history, memory, learned structure, and cognitive specialization through time rather than existing solely as isolated prompt-response invocations.
+RuneWisp investigates persistent developmental artificial cognition: an artificial cognitive system intended to accumulate history, memory, learned structure, relationships, specialization, and developmental continuity through time rather than existing only as isolated prompt-response invocations.
 
-KERNHELM and RuneWisp are separate research problems, but they intersect naturally.
+RuneWisp and KERNHELM are separate research problems.
 
-A sufficiently capable artificial cognitive system may eventually require meaningful authority over a computer in order to become genuinely useful.
+Their intersection is nevertheless important.
 
-It may need to observe continuously, manage software, interact with other systems, respond to changing conditions, defend its environment, and perform long-running work.
+A sufficiently capable native artificial intelligence may eventually need meaningful authority over its environment in order to become genuinely useful.
 
-That creates a difficult security problem if usefulness requires treating the cognitive system itself as the final authority boundary.
+It may need to:
 
-KERNHELM explores another arrangement.
+* observe continuously;
+* manage software;
+* interact with other systems;
+* perform long-running work;
+* collaborate with the user;
+* respond to changing conditions;
+* help build its own operating environment;
+* participate in system defense.
 
-RuneWisp may eventually become deeply capable within OathRune while KERNHELM remains underneath it as the independent mechanical authority wall.
+A conventional design can make that capability increasingly dangerous because usefulness and privilege become coupled.
 
-The cognitive system can reason about what should happen.
+KERNHELM explores a different arrangement.
 
-The authority system determines what effects are admitted.
+RuneWisp may become deeply capable inside OathRune while remaining above an authority boundary that it does not control.
+
+RuneWisp can reason about what should happen.
+
+KERNHELM determines whether governed effects possess authority to happen.
 
 In that sense, KERNHELM is intended to provide both:
 
 ```text
-a home for increasingly capable software
+a home for increasingly capable intelligence
 ```
 
 and:
@@ -494,17 +1086,39 @@ and:
 a wall protecting the person who owns that home
 ```
 
-This becomes particularly important if the native AI also participates in system defense.
+The objective is not an incapable AI kept safe through weakness.
 
-RuneWisp could eventually help detect, understand, and respond to hostile activity without requiring OathRune to make RuneWisp itself sovereign over the machine.
-
-The objective is not an incapable AI kept safe by weakness.
-
-It is a capable AI operating inside an architecture where intelligence and authority remain separate.
+It is increasingly capable intelligence operating inside an architecture where intelligence and authority remain separate.
 
 ---
 
-## Research Status
+# A General Security Architecture With an AI Consequence
+
+KERNHELM's strongest future application may ultimately prove to be advanced artificial intelligence.
+
+But AI is not what makes KERNHELM general.
+
+The opposite is true.
+
+KERNHELM's relevance to AI comes from the fact that it was designed around a broader security principle:
+
+> **No software should be trusted to define the limits of its own power.**
+
+That principle continues to make sense whether the actor is:
+
+* ordinary software;
+* malware;
+* an external attacker;
+* a compromised privileged service;
+* a human-operated tool;
+* an autonomous agent;
+* or a persistent native intelligence.
+
+That generality means the security boundary does not disappear when the nature of the software changes.
+
+---
+
+# Research Status
 
 KERNHELM remains under active development.
 
@@ -512,22 +1126,44 @@ The internal engineering and proof lineage is substantially larger than this rep
 
 This repository is intentionally **not** the canonical KERNHELM engineering tree.
 
-It does not contain the complete implementation archive, internal engineering documentation, proof packets, authority artifacts, build lineage, or current OathRune Master documentation.
+It does not contain:
+
+* the complete implementation archive;
+* complete internal engineering documentation;
+* all proof packets;
+* signing material;
+* complete authority artifacts;
+* full build lineage;
+* hostile-test corpora;
+* current OathRune Master documentation.
 
 Those materials are maintained separately under a governed development and provenance process.
 
-This repository exists as a concise public description of the research direction, demonstrated architectural core, and currently publishable experimental evidence.
+This repository exists as a concise public description of:
+
+* the research direction;
+* the authority model;
+* the demonstrated architectural core;
+* the current claim boundary;
+* and currently publishable experimental evidence.
 
 The architecture described here therefore contains both:
 
-* **demonstrated mechanisms**, for which experimental evidence currently exists; and
-* **long-term architectural objectives**, whose broader implementation remains ongoing.
+### Demonstrated mechanisms
+
+Mechanisms for which experimental proof currently exists.
+
+and:
+
+### Architectural objectives
+
+Broader effect families and end-state properties whose implementation and proof remain ongoing.
 
 Those categories should not be confused.
 
 ---
 
-## Public Research Output
+# Public Research Output
 
 **KERNHELM — Make Trust Irrelevant**
 DesoPK, 2026
@@ -535,28 +1171,32 @@ Independent systems-security research project.
 
 This repository serves as the current public architectural and experimental overview of KERNHELM.
 
-A formal technical report describing the authority model, threat boundary, experimental implementation, adversarial proof methodology, and measured results is in preparation.
+A formal technical report covering the authority model, threat boundary, experimental implementation, adversarial proof methodology, cryptographic authority architecture, forensic model, and measured results is in preparation.
 
 ---
 
-## Intellectual Property
+# Intellectual Property
 
 The KERNHELM architecture is the subject of intellectual-property work begun during its development, including a provisional patent application filed in 2026.
 
-Publication of this repository should not be interpreted as publication of the complete internal architecture, implementation lineage, or engineering corpus.
+Publication of this repository should not be interpreted as publication of the complete internal architecture, implementation lineage, cryptographic design corpus, proof corpus, or engineering documentation.
 
 ---
 
-## Research Principle
+# Research Principle
 
 KERNHELM grew from a broader idea:
 
 > **Do not build security around the hope that powerful software will always behave correctly. Build the machine so that behavior alone cannot manufacture authority.**
 
-For increasingly capable AI, that principle becomes even simpler:
+For artificial intelligence, that principle becomes:
 
 > **The smarter the software becomes, the more important it is that intelligence alone can never become authority.**
 
-Or, more simply:
+For operating-system security, it becomes:
+
+> **Do not ask whether software deserves broad trust when the machine can instead require exact authority for exact effects.**
+
+And at its simplest:
 
 # Make trust irrelevant.
