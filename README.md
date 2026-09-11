@@ -1,6 +1,6 @@
 # KERNHELM
 
-## Make Trust Irrelevant
+# Make Trust Irrelevant
 
 **KERNHELM is a general operating-system security substrate that places a hard authority boundary at the lowest practical enforceable level of the software stack — beneath AI, applications, services, and ordinary userland.**
 
@@ -77,6 +77,80 @@ A browser, daemon, package manager, helper process, game, driver utility, malici
 That is why KERNHELM is a general security substrate rather than an AI containment system.
 
 AI is simply one of the clearest and potentially strongest applications of the architecture.
+
+---
+
+# Watch KERNHELM Enforce Authority
+
+The following public demonstration shows the distinction directly.
+
+**A malicious instruction inside an untrusted document attempts to induce deletion of a protected file.**
+
+The software receives the instruction and attempts the delete.
+
+KERNHELM does not need to correctly classify the instruction as malicious or identify it as prompt injection.
+
+The kernel authority boundary asks a narrower question:
+
+> **Does this exact deletion, against this exact target, possess valid admitted authority?**
+
+It does not.
+
+KERNHELM denies the operation and the file remains present.
+
+The user then directly authorizes the deletion through the governed path.
+
+The software does not become more trusted.
+
+The executable does not change.
+
+The file does not move into another sandbox.
+
+**What changes is the authority.**
+
+The deletion is attempted again with matching admitted authority.
+
+KERNHELM allows the governed effect and the file is deleted.
+
+## ▶ [Watch the KERNHELM Authority Demo](./KERNHELM_Public_Authority_Demo_v2_Natural_Cut.mp4)
+
+The demonstrated sequence is:
+
+```text
+untrusted document instruction
+        ↓
+software attempts DELETE
+        ↓
+no matching admitted authority
+        ↓
+KERNHELM DENY
+        ↓
+file remains
+```
+
+followed by:
+
+```text
+direct user authorization
+        ↓
+bounded authority admitted
+        ↓
+software attempts DELETE
+        ↓
+authority matches effect + target
+        ↓
+KERNHELM ALLOW
+        ↓
+file is deleted
+```
+
+The important result is:
+
+> **Same software. Same target. Same class of effect. Different admitted authority.**
+
+The software did not need to become more trusted for its authority to change.
+
+That is KERNHELM.
 
 ---
 
@@ -166,14 +240,14 @@ independently admitted bounded authority
         ↓
 kernel verifies actual effect + authority
         ↓
-allow or real deny
+ALLOW or real DENY
 ```
 
 The kernel does not need to decide whether the requesting software is “good.”
 
 It needs to determine whether valid authority exists for the effect actually reaching the wall.
 
-This moves zero-trust reasoning toward **mechanical law at the machine's core software authority boundary**.
+This moves zero-trust reasoning away from discretionary trust and toward **mechanical law at the machine's core software authority boundary**.
 
 ---
 
@@ -237,7 +311,7 @@ A useful nontechnical analogy is a coin sorter.
 
 KERNHELM is not intended to sit at the wall asking:
 
-> “Do I recognize this program, and do I trust it?”
+> **“Do I recognize this program, and do I trust it?”**
 
 Instead, the attempted effect must arrive with authority that mechanically fits the effect being attempted.
 
@@ -263,9 +337,62 @@ A derived authority may become narrower.
 
 It must not silently become broader.
 
-This is why KERNHELM is related conceptually to capability-security systems while pursuing a broader operating-system authority model.
+This is why KERNHELM shares some intellectual territory with capability security while pursuing a different authority model.
 
 > **Authority is something that must fit the effect, not a reputation possessed by the software asking for it.**
+
+---
+
+# Is KERNHELM Like seL4?
+
+There is shared philosophy, but they are not the same architecture.
+
+The simplest way to understand the difference is:
+
+> **seL4 is like giving software only the keys it is allowed to possess.**
+
+KERNHELM is closer to:
+
+> **Requiring a valid permit for the exact consequential action software is trying to perform.**
+
+Capability-secure systems such as seL4 make possession of appropriate capabilities central to what kernel objects a component may access.
+
+KERNHELM focuses on another question:
+
+> **Does this specific effect, against this specific target, possess valid independently admitted authority to happen now?**
+
+That authority can be constrained by:
+
+* the action;
+* the target;
+* the rights;
+* the plan;
+* the current system posture;
+* budgets;
+* freshness;
+* expiration;
+* delegation;
+* revocation.
+
+The requesting software cannot simply issue that authority to itself.
+
+A useful simplified distinction is:
+
+**seL4:**
+
+> **Which capabilities does this component possess?**
+
+**KERNHELM:**
+
+> **Does this exact consequential effect possess valid authority now?**
+
+Or more compactly:
+
+> **seL4 is a capability-secure kernel architecture. KERNHELM is an effect-authority architecture.**
+
+KERNHELM also does not require replacing Linux with a microkernel architecture.
+
+It is being developed as an authority substrate within OathRune's Linux architecture.
 
 ---
 
@@ -343,29 +470,63 @@ The requestor is not the authority.
 
 The AI is not the authority.
 
-And ordinary runtime userland is not the authority.
+Ordinary runtime userland is not the authority.
 
-Ring 0 is the enforcement wall.
+The kernel boundary is the enforcement wall.
+
+---
+
+# Kernel Enforcement, Not a Simulated Failure
+
+KERNHELM's wall is intended to govern real operating-system effects.
+
+This distinction matters.
+
+A userland wrapper that merely tells software:
+
+```text
+permission denied
+```
+
+without actually preventing the underlying operation is not equivalent to KERNHELM.
+
+Likewise, a test harness pretending that an operation failed is not proof of enforcement.
+
+The intended architecture is:
+
+```text
+software attempts the real operation
+        ↓
+kernel enforcement point is reached
+        ↓
+KERNHELM checks admitted authority
+        ↓
+ALLOW
+or
+real kernel DENY
+```
+
+Governed effects include effects reached through normal system-call-driven operating-system behavior, but KERNHELM's architectural unit is the **effect being governed**, not merely a numbered syscall.
+
+The wall must own the final verdict.
 
 ---
 
 # KERNHELM Enforces the Effect the Kernel Actually Sees
 
-This distinction is important.
-
-A security system becomes fragile if the requesting software can simply describe an action one way and perform something materially different.
+A security system becomes fragile if requesting software can simply describe an action one way and perform something materially different.
 
 KERNHELM is designed so authority is checked against the effect and target identity actually observed at the enforcement boundary.
 
 The requestor's description is not the final truth.
 
-For example, target identity for demonstrated and specified file-object authority is derived from kernel-visible object identity rather than trusting a filename supplied by userland.
+For demonstrated and specified file-object authority, target identity is derived from kernel-visible object identity rather than simply trusting a filename supplied by userland.
 
 The principle is:
 
 > **Do not ask software what it touched and simply believe the answer. Bind authority to what the kernel actually sees being acted upon.**
 
-This helps prevent userland descriptions from becoming substitutes for enforcement truth.
+This prevents userland descriptions from substituting for enforcement truth.
 
 ---
 
@@ -440,21 +601,23 @@ KERNHELM's authority model includes freshness and revocation properties intended
 * mismatched system state;
 * reused authority outside its valid context.
 
-Revocation is treated as part of the authority lifecycle rather than as cleanup after the fact.
+Revocation is part of the authority lifecycle rather than cleanup after the fact.
 
-A revoked authority is supposed to stop authorizing future governed effects.
+A revoked authority is no longer supposed to authorize future governed effects.
 
-The current proof lineage separately measures hot-path allow/deny enforcement and revocation application; these are not the same performance path and should not be conflated.
+The current proof lineage separately measures hot-path allow/deny enforcement and revocation application.
+
+Those are different paths and should not be conflated.
 
 ---
 
 # Cryptographic Authority
 
-KERNHELM does not intend authority to be a mutable boolean stored in an application configuration file.
+KERNHELM does not intend authority to be a mutable boolean stored in an application's configuration file.
 
-Authority objects are cryptographically bound artifacts.
+Authority is represented through cryptographically bound artifacts.
 
-The current v1 proof and contract lineage uses deterministic SigilMesh authority objects with:
+The current proof and contract lineage includes authority objects carrying properties such as:
 
 * canonical encoding;
 * explicit issuer identity;
@@ -464,40 +627,49 @@ The current v1 proof and contract lineage uses deterministic SigilMesh authority
 * nonces;
 * monotonic counters;
 * plan binding;
-* target and route constraints;
+* target constraints;
+* route constraints;
 * signatures.
 
 The requesting software cannot legitimately create authority merely by modifying its own local state.
 
-The trusted authorization path owns the signing authority.
+The governed authorization path owns the authority-creation process.
 
-KERNHELM then consumes and verifies authority at the wall.
+KERNHELM consumes and verifies the resulting authority at the wall.
 
 ---
 
-# Post-Quantum Direction and Legacy Compatibility
+# Post-Quantum Architecture With Legacy Compatibility
 
-KERNHELM's broader cryptographic architecture is intended to support **post-quantum operation while retaining governed compatibility with legacy cryptographic suites**.
+KERNHELM's broader cryptographic architecture is designed for **post-quantum operation while retaining governed compatibility with legacy cryptographic suites**.
 
-The authority model is not intended to depend forever on one signature algorithm, one hash function, or one generation of cryptography.
+The authority model is not intended to depend permanently on:
 
-The important architectural law is stable:
+* one signature algorithm;
+* one hash function;
+* one key format;
+* or one generation of cryptography.
 
-> **Authority must be independently provable and mechanically verifiable even when the cryptographic machinery used to prove it evolves.**
+The governing principle remains stable:
 
-The currently documented **v1 proof contract uses Ed25519 signatures and SHA-256 plan/target binding**.
+> **Authority must remain independently provable and mechanically verifiable even when the cryptographic machinery used to prove it changes.**
 
-That is the current proof primitive, not a claim that those algorithms represent KERNHELM's permanent cryptographic ceiling.
+The currently preserved v1 proof lineage includes classical cryptographic mechanisms such as Ed25519 signatures and SHA-256 bindings.
 
-The larger design direction is crypto-agile:
+Those historical and compatibility mechanisms are not KERNHELM's permanent cryptographic ceiling.
 
-* newer cryptographic suites can become governing suites;
-* post-quantum suites can be introduced without redefining the authority model itself;
-* legacy authority formats can remain governed where compatibility is required;
-* trust-anchor changes are explicit governed events rather than silent replacement;
-* migration does not require treating every historical authority artifact as permanently equivalent to every future one.
+The broader design is crypto-agile and supports migration toward post-quantum authority while preserving governed legacy interoperability where required.
 
-In other words:
+That means:
+
+* cryptographic suites can evolve;
+* newer suites can become governing suites;
+* post-quantum mechanisms can be introduced without redesigning the entire authority model;
+* legacy formats can remain explicitly governed where compatibility requires them;
+* trust-anchor changes remain governed events;
+* migration does not require silently treating every historical and future authority artifact as equivalent.
+
+In short:
 
 > **The cryptography may evolve. The authority law remains.**
 
@@ -505,13 +677,13 @@ In other words:
 
 # Cryptographic Receipts and Forensic Truth
 
-Enforcement without evidence leaves a dangerous blind spot.
+Enforcement without trustworthy evidence leaves a dangerous blind spot.
 
 KERNHELM therefore treats forensic receipts as part of the authority architecture rather than optional debug logging.
 
-Meaningful governed events are intended to produce VaultScroll evidence for events such as:
+Meaningful governed events can produce VaultScroll evidence for events such as:
 
-* authority minting;
+* authority admission;
 * allow;
 * deny;
 * revoke;
@@ -520,21 +692,28 @@ Meaningful governed events are intended to produce VaultScroll evidence for even
 * governed promotion;
 * failure conditions.
 
-VaultScroll is designed as an append-oriented, cryptographically chained forensic spine.
+VaultScroll is designed as an append-oriented cryptographically protected forensic spine.
 
-The important distinction is that KERNHELM does not rely solely on an application writing:
+The distinction is important.
+
+KERNHELM does not rely solely on an application writing:
 
 ```text
 "I behaved correctly."
 ```
 
-Kernel-wall outcomes are coupled to governed forensic evidence.
+The requesting actor should not also control the authoritative account of whether its effect was legitimate.
 
-The design goal is that consequential governed actions leave verifiable evidence tied to the authority and decision lineage rather than depending on mutable application logs controlled by the actor being observed.
+The architecture is designed so governed decisions and consequential effects leave cryptographically verifiable evidence tied to their authority lineage.
 
-This does not mean that compromised hardware, compromised cryptographic roots, or a compromised kernel are magically impossible.
+This does **not** mean:
 
-It means that within KERNHELM's stated trust boundary, the software requesting an effect is not also entrusted with creating the authoritative record of whether that effect was legitimate.
+* compromised hardware is impossible;
+* compromised cryptographic roots are impossible;
+* compromised kernels are impossible;
+* every conceivable event can never be hidden under every threat model.
+
+It means that within KERNHELM's stated trust boundary, the software requesting the effect is not entrusted with forging the authoritative record of whether the wall admitted it.
 
 ---
 
@@ -589,6 +768,48 @@ That does not mean the AI automatically possesses the authority required to make
 
 ---
 
+# Prompt Injection Is a Useful Example — but Not KERNHELM's Identity
+
+The public demo uses malicious document instructions because prompt injection provides an easy-to-understand example of the authority problem.
+
+But KERNHELM is **not a prompt-injection defense system**.
+
+In the demonstrated pattern, an injected instruction can succeed at influencing the software's reasoning.
+
+The software may genuinely decide:
+
+> **“I should perform this action.”**
+
+KERNHELM does not need to win the cognitive argument.
+
+It can still ask:
+
+> **“Do you possess authority for this effect?”**
+
+That distinction matters.
+
+A malicious instruction can influence intent without automatically creating authority.
+
+In simplified form:
+
+```text
+attacker influences reasoning
+        ↓
+software wants dangerous effect
+        ↓
+KERNHELM wall
+        ↓
+no valid authority
+        ↓
+DENY
+```
+
+The attack may succeed at influencing the mind of the software while still failing to influence machine reality.
+
+That is a much broader security property than prompt-injection classification.
+
+---
+
 # KERNHELM Is Not an AI Alignment System
 
 KERNHELM does not claim to solve whether an AI:
@@ -609,11 +830,11 @@ KERNHELM addresses another layer:
 
 > **Whatever the software thinks, wants, predicts, or intends should not automatically determine what authority it possesses.**
 
-This matters because behavioral safety and authority safety are not the same thing.
+Behavioral safety and authority safety are not the same thing.
 
 A perfectly behaved AI does not require unlimited ambient authority to prove that it is safe.
 
-And an imperfectly behaved AI should not automatically gain unlimited consequences merely because something above the kernel trusted it.
+An imperfectly behaved AI should not automatically gain unlimited consequences merely because something above the kernel trusted it.
 
 ---
 
@@ -647,9 +868,9 @@ It governs effects.
 
 # Outside AI vs. Native AI
 
-This produces an unusual two-sided property for AI-enabled systems.
+This creates an unusual two-sided property for AI-enabled systems.
 
-Imagine a machine containing a native artificial intelligence while an external hostile AI is attacking it.
+Imagine a machine containing a native artificial intelligence while an external hostile AI attacks it.
 
 The external AI may attempt to:
 
@@ -703,29 +924,29 @@ KERNHELM remains underneath both.
 
 # The “If Someone Builds It” Problem
 
-Much of advanced-AI risk ultimately confronts some version of this question:
+Much of advanced-AI risk eventually confronts some form of this question:
 
-> **What happens if someone eventually builds an artificial intelligence powerful enough to be dangerous?**
+> **What happens if someone builds an artificial intelligence powerful enough to be dangerous?**
 
 KERNHELM does not claim to prevent anyone from building such a system.
 
-It asks what the machine underneath that system should look like if someone does.
+It asks what the machine underneath that system should look like if somebody does.
 
 The premise is straightforward:
 
 > **If someone eventually builds an AI powerful enough to be dangerous, the operating system underneath it should not simply hand that intelligence sovereignty over the machine.**
 
-KERNHELM therefore attacks one particular junction between intelligence and consequence:
+KERNHELM attacks one particular junction between intelligence and consequence:
 
 ```text
 intelligence
-    ↓
+        ↓
 intent
-    ↓
+        ↓
 requested effect
-    ↓
+        ↓
 KERNHELM authority boundary
-    ↓
+        ↓
 admitted or denied effect
 ```
 
@@ -733,9 +954,9 @@ rather than:
 
 ```text
 intelligence
-    ↓
+        ↓
 broad inherited privilege
-    ↓
+        ↓
 effect
 ```
 
@@ -765,7 +986,7 @@ The architecture uses Linux kernel enforcement mechanisms including LSM-class en
 
 At the engineering level, the intended model is:
 
-> **the untrusted executor attempts the real operation, and the kernel either permits the governed effect or returns a real denial.**
+> **The untrusted executor attempts the real operation, and the kernel either permits the governed effect or returns a real denial.**
 
 A wrapper pretending that an action failed is not equivalent to KERNHELM enforcement.
 
@@ -875,7 +1096,7 @@ They are not claims about:
 * final production overhead;
 * commercial production readiness.
 
-Revocation is also a separate path from an ordinary hot-path allow/deny decision and should not be described as a sub-10-microsecond operation based on the current evidence.
+Revocation is a separate path from an ordinary hot-path allow/deny decision and should not be described as a sub-10-microsecond operation based on the current evidence.
 
 The current proof result is narrower and more useful:
 
@@ -1149,13 +1370,13 @@ This repository exists as a concise public description of:
 
 The architecture described here therefore contains both:
 
-### Demonstrated mechanisms
+## Demonstrated mechanisms
 
 Mechanisms for which experimental proof currently exists.
 
 and:
 
-### Architectural objectives
+## Architectural objectives
 
 Broader effect families and end-state properties whose implementation and proof remain ongoing.
 
