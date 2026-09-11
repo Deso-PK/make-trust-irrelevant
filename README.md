@@ -112,7 +112,7 @@ The deletion is attempted again with matching admitted authority.
 
 KERNHELM allows the governed effect and the file is deleted.
 
-## ▶ [Watch the KERNHELM Authority Demo](./KERNHELM_Public_Authority_Demo_v2_Natural_Cut.mp4)
+## [▶ [Watch the KERNHELM Authority Demo](./KERNHELM_Public_Authority_Demo_v2_Natural_Cut.mp4)](https://github.com/user-attachments/assets/a95da0ab-5c63-42e5-98b6-d28b9e0e93b1)
 
 The demonstrated sequence is:
 
