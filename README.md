@@ -1,5 +1,27 @@
 # KERNHELM
 
+## In Plain Language
+
+**KERNHELM is a general security architecture that places a hard authority boundary at the lowest practical enforceable level of the operating system — beneath AI, applications, and ordinary user software.**
+
+Software above that boundary may be extremely capable, but capability alone does not create permission.
+
+A program can request an action. It cannot simply grant itself the authority to perform that action, rewrite the rules constraining it, or become trusted merely because it is intelligent, useful, or already privileged.
+
+The architectural separation is absolute by design:
+
+> **The software asking for an effect is not allowed to be the thing that decides whether it has authority to cause that effect.**
+
+For AI, this creates an important property:
+
+> **The machine does not have to depend entirely on the AI's continued cooperation in order to remain secure.**
+
+KERNHELM separates intelligence from sovereignty.
+
+**Capability is not permission.**
+
+---
+
 ## Make Trust Irrelevant
 
 KERNHELM is an experimental kernel-level authority system designed around a simple premise:
@@ -36,7 +58,7 @@ Security systems can reduce this risk through sandboxing, mandatory access contr
 
 KERNHELM explores a different layer of the problem:
 
-**What if the requesting process never possessed enough standing authority to make the privileged effect happen by itself?**
+> **What if the requesting process never possessed enough standing authority to make the privileged effect happen by itself?**
 
 ---
 
@@ -73,7 +95,7 @@ Kernel Enforcement
         │
         ├── fits admitted authority → effect may proceed
         │
-        └── does not fit          → deny
+        └── does not fit            → deny
 ```
 
 The requesting process does not mint its own authority.
@@ -82,31 +104,37 @@ It may propose an action, but the authority needed to perform a governed privile
 
 The enforcement boundary then checks the effect that is actually occurring rather than trusting the requestor's description of what it intended to do.
 
+This creates a simple underlying rule:
+
+> **No software should be trusted to define the limits of its own power.**
+
 ---
 
 ## Why This Matters for AI Agents
 
-AI agents make the ambient-authority problem especially visible.
+AI makes the ambient-authority problem unusually important because intelligence and authority are normally coupled together when autonomous systems become useful.
 
-An agent can be useful precisely because it is capable of:
+An agent becomes more useful as it gains the ability to:
 
-* reading and modifying files;
-* invoking tools;
-* executing programs;
-* managing applications;
-* communicating with services;
-* controlling parts of a computer;
-* carrying out long sequences of actions.
+* read and modify files;
+* invoke tools;
+* execute programs;
+* manage applications;
+* communicate with services;
+* control parts of a computer;
+* observe and respond to changing conditions;
+* detect and respond to threats;
+* carry out long sequences of actions.
 
-But giving an agent those abilities normally also means trusting its behavior.
+But those abilities normally require granting the agent increasingly broad authority and then trusting it to use that authority correctly.
 
-Prompt injection, model error, compromised dependencies, malicious tool output, mistaken reasoning, or unexpected software interactions can transform useful authority into dangerous authority.
+Prompt injection, model error, compromised dependencies, malicious tool output, mistaken reasoning, unexpected software interactions, hostile external systems, or future behaviors that were never anticipated can transform useful authority into dangerous authority.
 
 The common response is therefore to restrict what the agent can do.
 
-KERNHELM explores the opposite possibility:
+KERNHELM explores another possibility:
 
-> **Build a stronger authority boundary underneath the agent so that the agent can safely be given more useful capability above it.**
+> **Build a stronger authority boundary underneath increasingly capable software so that usefulness does not require surrendering control of the machine.**
 
 The agent is not required to be the security boundary.
 
@@ -116,21 +144,92 @@ It may be manipulated.
 
 It may request an effect that should never occur.
 
-The kernel boundary still requires valid authority for the governed effect.
+It may become far more capable than the systems that originally surrounded it.
+
+None of those facts automatically create authority.
+
+The kernel boundary still requires valid admitted authority for the governed effect.
+
+That leads to two important distinctions:
+
+> **Intelligence is not authority.**
+
+and:
+
+> **Capability is not permission.**
+
+KERNHELM does not attempt to make an AI safe by requiring it to be incapable.
+
+Instead, it explores whether increasingly capable software can operate inside a system where its ability to reason about an action remains fundamentally separate from its authority to make that action happen.
 
 ---
 
 ## KERNHELM Is Not AI-Specific
 
-AI is only one important application.
+KERNHELM was not originally designed as an AI-safety system.
 
-From the enforcement boundary's perspective, an AI agent, compromised service, malicious script, vulnerable application, or unexpected userland process presents the same fundamental question:
+It is a general security architecture.
+
+That generality is exactly what makes its application to advanced AI unusually powerful.
+
+From the enforcement boundary's perspective, an AI agent, compromised service, malicious script, vulnerable application, remote attacker acting through compromised software, or unexpected userland process ultimately presents the same fundamental question:
 
 > **Does this attempted effect possess admitted authority?**
 
-KERNHELM therefore targets software whose behavior cannot safely be assumed in advance rather than one particular class of software.
+The wall does not need to determine whether the actor is an AI before enforcing authority.
 
-The broader objective is a machine where ownership is expressed through enforceable authority rather than through assumptions about which sufficiently privileged software should be trusted.
+It governs effects.
+
+This creates a two-sided security model for systems that contain increasingly capable AI.
+
+### Hostile AI Outside the System
+
+An outside AI may attempt to exploit applications, manipulate services, compromise software, deceive an internal agent, abuse exposed interfaces, or otherwise cause effects on the machine.
+
+KERNHELM does not depend on recognizing the attacker as an AI.
+
+If the attack reaches software above the authority wall, the resulting governed effects remain subject to the same authority boundary.
+
+Compromising or manipulating software does not, by itself, manufacture additional authority.
+
+### Native AI Defending the System
+
+At the same time, a native AI defending the machine does not need to receive unrestricted authority merely because it is the defender.
+
+It may:
+
+* observe suspicious behavior;
+* reason about an attack;
+* correlate events;
+* adapt its defensive strategy;
+* identify compromised components;
+* propose isolation or containment;
+* request defensive actions;
+* assist the user during an active incident.
+
+But the native AI remains on the requesting side of the authority boundary.
+
+It does not become sovereign over the machine merely because its intentions are defensive.
+
+The result is an unusual security property:
+
+> **A system can give its defender enormous intelligence without automatically giving that defender unlimited authority.**
+
+The hostile actor does not gain authority merely because it found a path into software above the wall.
+
+The defending actor does not gain unlimited authority merely because it is trusted to defend the wall.
+
+KERNHELM remains underneath both.
+
+In that sense:
+
+> **KERNHELM separates intelligence from sovereignty.**
+
+AI may ultimately become one of KERNHELM's strongest applications.
+
+But KERNHELM does not depend on AI-specific assumptions to provide that protection because the architecture was built around a more general rule:
+
+> **No software actor — intelligent or otherwise — should be able to turn capability into authority by itself.**
 
 ---
 
@@ -155,6 +254,14 @@ A child or delegated authority may become narrower.
 It must not become broader merely because the holder asks for more.
 
 When additional authority is required, the request must return through the governed authorization path.
+
+This is important because authorization is not intended to mean:
+
+> "This software is trusted."
+
+It is intended to mean something closer to:
+
+> "This specific authority exists for this bounded class of effect under these constraints."
 
 ---
 
@@ -184,7 +291,11 @@ The executor is not the authority.
 
 The requestor is not the authority.
 
+The AI is not the authority.
+
 The wall enforces authority produced through the governed path.
+
+This keeps the final security boundary beneath the software whose behavior is being governed.
 
 ---
 
@@ -210,6 +321,10 @@ This demonstrates the core authority primitive.
 It does **not** mean that every possible privileged Linux effect is already governed.
 
 Additional effect classes remain part of the continuing engineering program.
+
+The distinction matters.
+
+KERNHELM's architectural objective is broad, but its public claims remain bounded to what the current proof lineage has actually demonstrated.
 
 ---
 
@@ -280,6 +395,10 @@ They are measurements of the demonstrated proof-mode wall-check path, not claims
 
 Performance remains a first-class engineering requirement alongside security.
 
+The long-term objective is not merely to create a stronger authority model.
+
+It is to create one inexpensive enough to serve as ordinary system infrastructure.
+
 ---
 
 ## What KERNHELM Does Not Claim
@@ -294,6 +413,7 @@ KERNHELM is not:
 * a claim that cryptographic key compromise is impossible;
 * a replacement for every existing Linux security mechanism;
 * a guarantee that all software exploitation becomes impossible;
+* a claim that every Linux effect is already governed;
 * a finished production security product.
 
 It addresses a narrower question:
@@ -301,6 +421,14 @@ It addresses a narrower question:
 > **Can privileged effects be made dependent on bounded authority that the requesting side cannot create for itself?**
 
 That is the problem KERNHELM is attempting to solve.
+
+The distinction is important for AI.
+
+KERNHELM does not claim to guarantee that a sufficiently advanced AI will always reason correctly, remain aligned, resist manipulation, or choose desirable goals.
+
+Its security proposition is different:
+
+> **Whatever the software thinks, wants, predicts, or intends should not automatically determine what authority it possesses.**
 
 ---
 
@@ -324,6 +452,12 @@ Its role is not to decide what a person is allowed to do with their own computer
 
 Its role is to protect the person's authority over that computer from software operating without explicitly governed permission.
 
+That distinction is fundamental to OathRune's security model:
+
+> **The person is protected. Userland is governed.**
+
+KERNHELM is intended to preserve ownership of the machine rather than transfer that ownership to whichever software currently possesses the broadest privilege.
+
 ---
 
 ## RuneWisp
@@ -336,7 +470,17 @@ KERNHELM and RuneWisp are separate research problems, but they intersect natural
 
 A sufficiently capable artificial cognitive system may eventually require meaningful authority over a computer in order to become genuinely useful.
 
-KERNHELM explores how such authority can exist without making the cognitive system itself the final security boundary.
+It may need to observe continuously, manage software, interact with other systems, respond to changing conditions, defend its environment, and perform long-running work.
+
+That creates a difficult security problem if usefulness requires treating the cognitive system itself as the final authority boundary.
+
+KERNHELM explores another arrangement.
+
+RuneWisp may eventually become deeply capable within OathRune while KERNHELM remains underneath it as the independent mechanical authority wall.
+
+The cognitive system can reason about what should happen.
+
+The authority system determines what effects are admitted.
 
 In that sense, KERNHELM is intended to provide both:
 
@@ -349,6 +493,14 @@ and:
 ```text
 a wall protecting the person who owns that home
 ```
+
+This becomes particularly important if the native AI also participates in system defense.
+
+RuneWisp could eventually help detect, understand, and respond to hostile activity without requiring OathRune to make RuneWisp itself sovereign over the machine.
+
+The objective is not an incapable AI kept safe by weakness.
+
+It is a capable AI operating inside an architecture where intelligence and authority remain separate.
 
 ---
 
@@ -365,6 +517,13 @@ It does not contain the complete implementation archive, internal engineering do
 Those materials are maintained separately under a governed development and provenance process.
 
 This repository exists as a concise public description of the research direction, demonstrated architectural core, and currently publishable experimental evidence.
+
+The architecture described here therefore contains both:
+
+* **demonstrated mechanisms**, for which experimental evidence currently exists; and
+* **long-term architectural objectives**, whose broader implementation remains ongoing.
+
+Those categories should not be confused.
 
 ---
 
@@ -393,6 +552,10 @@ Publication of this repository should not be interpreted as publication of the c
 KERNHELM grew from a broader idea:
 
 > **Do not build security around the hope that powerful software will always behave correctly. Build the machine so that behavior alone cannot manufacture authority.**
+
+For increasingly capable AI, that principle becomes even simpler:
+
+> **The smarter the software becomes, the more important it is that intelligence alone can never become authority.**
 
 Or, more simply:
 
