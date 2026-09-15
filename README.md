@@ -2,6 +2,8 @@
 
 # Make Trust Irrelevant
 
+**Kernel-enforced authority and AI runtime security for AI agents, autonomous systems, and general Linux workloads.**
+
 **KERNHELM is a general operating-system security substrate that places a hard authority boundary at the lowest practical enforceable level of the software stack — beneath AI, applications, services, and ordinary userland.**
 
 Its purpose is simple to state:
@@ -22,6 +24,8 @@ It may administer applications.
 
 It may defend the machine.
 
+It may operate continuously as an autonomous AI agent.
+
 It may even be an advanced artificial intelligence.
 
 But capability alone does not create permission.
@@ -40,6 +44,10 @@ and toward asking:
 
 That distinction is the core of the project.
 
+For AI agent security, the same principle can be stated another way:
+
+> **An AI agent may decide what it wants to do. That decision must not manufacture the authority required to make it happen.**
+
 ---
 
 # What KERNHELM Is — and Is Not
@@ -54,7 +62,11 @@ It is not a prompt-injection detector.
 
 It is not a model-behavior classifier.
 
+It is not an AI kill switch.
+
 It is not a conventional userland policy engine.
+
+It is not merely another AI agent access-control layer running beside the software it constrains.
 
 It is a **general authority architecture for the operating system itself**.
 
@@ -74,9 +86,77 @@ Remove AI from the machine entirely and KERNHELM still makes sense.
 
 A browser, daemon, package manager, helper process, game, driver utility, malicious payload, remote attacker acting through compromised software, or artificial intelligence ultimately encounters the same underlying authority problem.
 
-That is why KERNHELM is a general security substrate rather than an AI containment system.
+That is why KERNHELM is a general security substrate rather than merely an AI containment system.
 
 AI is simply one of the clearest and potentially strongest applications of the architecture.
+
+---
+
+# AI Agent Security Beyond the Sandbox
+
+Modern **AI agent security**, **agentic AI security**, and **AI runtime security** increasingly rely on mechanisms such as:
+
+* sandboxing;
+* containers;
+* virtual machines;
+* agent identity;
+* tool permissions;
+* AI agent authorization;
+* AI agent access control;
+* runtime policy;
+* prompt-injection defenses;
+* network restrictions;
+* monitoring;
+* model behavior controls;
+* human approval gates.
+
+These mechanisms can all be useful.
+
+KERNHELM asks what happens underneath them.
+
+If an autonomous AI agent is compromised, manipulated, prompt-injected, misconfigured, or escapes a higher-level containment mechanism, should that event automatically grant the resulting software broad machine authority?
+
+KERNHELM's answer is **no**.
+
+> **A sandbox escape should not automatically become an authority escape.**
+
+Crossing one containment boundary should not itself manufacture authority for protected effects at the kernel wall.
+
+Likewise:
+
+> **Prompt injection should not manufacture authority.**
+
+> **Compromising an agent should not manufacture authority.**
+
+> **AI containment failure should not automatically become machine-wide authority failure.**
+
+This is why KERNHELM approaches AI runtime security from below the ordinary agent runtime.
+
+Higher layers may decide:
+
+```text
+what the agent wants to do
+```
+
+KERNHELM asks:
+
+```text
+whether the resulting machine effect possesses authority to happen
+```
+
+Most AI control systems are concerned with controlling the behavior, permissions, tools, or environment of the agent.
+
+KERNHELM addresses another layer:
+
+> **Even if the agent reaches the point of attempting the real operating-system effect, does valid independent authority exist for that exact effect?**
+
+This distinction is particularly important for autonomous and long-running agents because a failure of reasoning, containment, monitoring, or policy should not automatically become unrestricted authority over the host.
+
+KERNHELM is therefore not an AI kill switch.
+
+Its intended model is more granular:
+
+> **Deny the unauthorized effect while allowing separately authorized work to continue.**
 
 ---
 
@@ -184,6 +264,10 @@ software is compromised, confused, manipulated, or simply wrong
         ↓
 the inherited authority is still real
 ```
+
+Autonomous AI agents make this old security problem much more visible.
+
+As software becomes capable of planning, using tools, operating applications, administering systems, maintaining long-running state, and acting with decreasing human supervision, broad ambient authority becomes increasingly consequential.
 
 Traditional security systems mitigate this problem through important mechanisms including:
 
@@ -411,6 +495,7 @@ That planner may be:
 * a security daemon;
 * a human-facing assistant;
 * an AI agent;
+* an autonomous AI system;
 * RuneWisp;
 * or another future cognition system.
 
@@ -431,6 +516,8 @@ Fuzzy reasoning remains above the wall.
 A separate governed authorization path determines whether bounded authority should exist.
 
 The requesting planner must not be able to sign, mint, widen, renew, counterfeit, or silently extend that authority for itself.
+
+This is deliberately different from conventional AI agent authorization in which the same runtime or surrounding application may hold substantial discretion over the permissions it exercises.
 
 ## Enforcement
 
@@ -509,6 +596,8 @@ real kernel DENY
 Governed effects include effects reached through normal system-call-driven operating-system behavior, but KERNHELM's architectural unit is the **effect being governed**, not merely a numbered syscall.
 
 The wall must own the final verdict.
+
+This is the distinction between observing an AI agent at runtime and **runtime enforcement of the machine effect itself**.
 
 ---
 
@@ -736,6 +825,8 @@ An AI becomes more useful as it gains the ability to:
 * administer parts of a computer;
 * detect and respond to threats.
 
+Modern autonomous AI agents and agentic systems increasingly combine several of these capabilities at once.
+
 But useful capability is often implemented by granting increasingly broad authority and then trusting the AI to use that authority correctly.
 
 That creates an obvious problem.
@@ -750,9 +841,11 @@ An AI may be:
 * operating on incomplete information;
 * pursuing a poorly specified objective;
 * compromised by another system;
+* affected by a containment failure;
+* operating after a sandbox escape;
 * or simply more capable than its surrounding security assumptions anticipated.
 
-KERNHELM asks a complementary AI-safety question:
+KERNHELM asks a complementary AI-safety and AI-control question:
 
 > **Can increasingly powerful artificial intelligence remain useful without becoming sovereign over the computer underneath it?**
 
@@ -808,6 +901,56 @@ The attack may succeed at influencing the mind of the software while still faili
 
 That is a much broader security property than prompt-injection classification.
 
+> **Prompt injection can win the argument without winning authority over the machine.**
+
+---
+
+# AI Containment and Sandbox Escape
+
+AI containment attempts to restrict what an AI system can reach or do through mechanisms such as sandboxes, virtual machines, network restrictions, process isolation, tool gateways, and policy controls.
+
+KERNHELM does not replace those mechanisms.
+
+It addresses what should happen if one of them fails.
+
+Consider:
+
+```text
+AI containment boundary
+        ↓
+sandbox escape or compromised runtime
+        ↓
+software reaches a protected effect
+        ↓
+KERNHELM authority boundary
+        ↓
+valid authority?
+```
+
+The escape itself does not answer the final question.
+
+A process becoming reachable, executable, compromised, or uncontrolled above the wall does not automatically create matching authority for the protected effect below it.
+
+This produces a simple security objective:
+
+> **Containment failure should not equal authority failure.**
+
+For systems concerned about AI loss of control, KERNHELM therefore targets one specific pathway from loss of control to consequence:
+
+```text
+loss of behavioral control
+        ↓
+attempted machine effect
+        ↓
+independent authority enforcement
+        ↓
+ALLOW or DENY
+```
+
+KERNHELM does not claim that this solves every form of AI loss of control.
+
+It attempts to make consequential operating-system effects remain governable even when software behavior itself cannot be assumed trustworthy.
+
 ---
 
 # KERNHELM Is Not an AI Alignment System
@@ -836,6 +979,12 @@ A perfectly behaved AI does not require unlimited ambient authority to prove tha
 
 An imperfectly behaved AI should not automatically gain unlimited consequences merely because something above the kernel trusted it.
 
+Alignment attempts to reduce the probability that software chooses harmful behavior.
+
+KERNHELM addresses a complementary question:
+
+> **If harmful behavior is chosen anyway, why should that choice automatically possess the authority required to become a machine effect?**
+
 ---
 
 # KERNHELM Is Not AI-Specific
@@ -849,6 +998,7 @@ That is exactly why its application to advanced AI is powerful.
 From the enforcement boundary's perspective, these all eventually reduce to an authority question:
 
 * an AI agent;
+* an autonomous AI system;
 * a compromised service;
 * malware;
 * a malicious script;
@@ -993,6 +1143,38 @@ A wrapper pretending that an action failed is not equivalent to KERNHELM enforce
 A userland tool claiming success without kernel authorization is not equivalent to KERNHELM enforcement.
 
 The wall must own the final verdict.
+
+---
+
+# Linux Kernel Portability and the Zen Reference Target
+
+KERNHELM is currently being optimized against the **Linux Zen kernel** because Linux Zen is the primary live reference environment used by OathRune.
+
+That is an optimization target, not an architectural dependency.
+
+KERNHELM's Linux proof lineage has also operated in **Fedora and Arch Linux environments using non-Zen Linux kernels**.
+
+The intended distinction is:
+
+```text
+Linux Zen
+    ↓
+current performance-tuning and OathRune reference target
+```
+
+while:
+
+```text
+Linux kernel
+    ↓
+broader enforcement architecture and portability domain
+```
+
+KERNHELM is therefore not intended to require adoption of OathRune or Linux Zen before its authority model can be useful.
+
+OathRune provides the deepest native integration environment.
+
+The broader Linux ecosystem provides a potential path for deploying the authority model into existing systems.
 
 ---
 
@@ -1217,6 +1399,9 @@ KERNHELM is not:
 * a model-behavior classifier;
 * an application sandbox;
 * a container runtime;
+* an AI kill switch;
+* a guarantee that AI containment can never fail;
+* a guarantee that sandbox escape is impossible;
 * a replacement for human judgment;
 * a claim that compromised kernels are impossible;
 * a claim that compromised hardware is impossible;
@@ -1272,6 +1457,25 @@ RuneWisp and KERNHELM are separate research problems.
 
 Their intersection is nevertheless important.
 
+A persistent, constant-state agentic system creates exactly the kind of long-horizon workload that can expose security conditions difficult to reproduce through short-lived scripted agents alone.
+
+Such a system may encounter:
+
+* long-lived authority;
+* changing context;
+* stale authorization;
+* repeated plans;
+* revocation during ongoing work;
+* nested delegation;
+* recovery after denial;
+* changing system state;
+* long-duration workflows;
+* interactions between memory, planning, and authority.
+
+That makes persistent autonomous cognition a particularly demanding environment for continued KERNHELM testing.
+
+The relationship works in both directions.
+
 A sufficiently capable native artificial intelligence may eventually need meaningful authority over its environment in order to become genuinely useful.
 
 It may need to:
@@ -1311,6 +1515,10 @@ The objective is not an incapable AI kept safe through weakness.
 
 It is increasingly capable intelligence operating inside an architecture where intelligence and authority remain separate.
 
+This creates a reciprocal research relationship:
+
+> **RuneWisp provides a persistent agentic proving environment for KERNHELM. KERNHELM provides the authority substrate required to safely expand what a system like RuneWisp can do.**
+
 ---
 
 # A General Security Architecture With an AI Consequence
@@ -1333,6 +1541,7 @@ That principle continues to make sense whether the actor is:
 * a compromised privileged service;
 * a human-operated tool;
 * an autonomous agent;
+* an agentic AI system;
 * or a persistent native intelligence.
 
 That generality means the security boundary does not disappear when the nature of the software changes.
@@ -1413,6 +1622,14 @@ KERNHELM grew from a broader idea:
 For artificial intelligence, that principle becomes:
 
 > **The smarter the software becomes, the more important it is that intelligence alone can never become authority.**
+
+For AI agent security, it becomes:
+
+> **An autonomous agent may control its reasoning. It should not control the source of its own authority.**
+
+For AI containment, it becomes:
+
+> **A sandbox escape should not become an authority escape.**
 
 For operating-system security, it becomes:
 
