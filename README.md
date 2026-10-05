@@ -2,7 +2,7 @@
 
 # Make Trust Irrelevant
 
-**Kernel-enforced authority and AI runtime security for AI agents, autonomous systems, and general Linux workloads.**
+**Kernel-enforced authority and runtime security for Linux systems, applications, autonomous software, and AI agents.**
 
 **KERNHELM is a general operating-system security substrate that places a hard authority boundary at the lowest practical enforceable level of the software stack — beneath AI, applications, services, and ordinary userland.**
 
